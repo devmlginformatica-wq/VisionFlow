@@ -1,0 +1,16 @@
+export const authStrings = {
+    title: 'Boas-vindas de volta',
+    description: 'Entre na sua conta para continuar.',
+    emailLabel: 'E-mail',
+    emailPlaceholder: 'voce@empresa.com.br',
+    passwordLabel: 'Senha',
+    passwordPlaceholder: 'Digite sua senha',
+    showPassword: 'Mostrar senha',
+    hidePassword: 'Ocultar senha',
+    submit: 'Entrar',
+    loading: 'Entrando',
+    brandingTitle: 'Vision Flow',
+    brandingSubtitle: 'Força de vendas',
+    brandingMessage: 'Cada conversa abre caminho para a próxima conquista.',
+    genericError: 'Não foi possível entrar. Tente novamente.',
+} as const

@@ -1,0 +1,45 @@
+{
+  "success": true,
+  "data": {
+    "id": 1001,
+    "tipo": "pedido",
+    "numero": "1001",
+    "numero_cliente": "OC-2026-045",
+    "status": "em_digitacao",
+    "data_emissao": "2026-01-30T10:15:00Z",
+    "data_entrega": "2026-02-05T00:00:00Z",
+    "empresa": { "id": 1, "nome": "Vision Flow Distribuidora" },
+    "cliente": { "id": 24129, "nome": "ALESSANDRO SILVA TOMAZ", "cpf_cnpj": "039.441.526-46" },
+    "condicao_pagamento": { "id": 3, "descricao": "30/60/90 dias" },
+    "forma_pagamento": { "id": 2, "descricao": "Boleto" },
+    "transportadora": { "id": 7, "nome": "Transportes Silva" },
+    "endereco_faturamento_id": 1,
+    "endereco_entrega_id": 1,
+    "endereco_cobranca_id": 1,
+    "valor_frete": 120.00,
+    "observacoes": "",
+    "observacoes_nf": "",
+    "itens": [
+      {
+        "sequencia": 1,
+        "codigo_cliente": "CLI-001",
+        "produto": {
+          "id": 555, "codigo": "P555", "descricao": "Cabo Flexível 2,5mm",
+          "familia": "Elétrica", "marca": "Sil", "unidade": "MT",
+          "peso_liquido": 0.25, "peso_bruto": 0.28, "cubagem": 0.001,
+          "comprimento": 100.0, "largura": 1.0, "altura_espessura": 1.0,
+          "qtde_embalagem": 100, "permite_venda_sem_estoque": true
+        },
+        "tabela_preco": { "id": 1, "nome": "Padrão", "vigencia": "2026-12-31" },
+        "quantidade": 50, "preco_venda": 4.75, "valor_desconto": 10.00,
+        "total_item": 227.50, "observacao": ""
+      }
+    ],
+    "totais": {
+      "quantidade_mix": 50, "quantidade_volume": 1, "cubagem_total": 0.05,
+      "peso_liquido": 12.5, "peso_bruto": 14.0,
+      "total_bruto": 237.50, "total_desconto": 10.00, "total_liquido": 347.50
+    }
+  },
+  "error": null
+}

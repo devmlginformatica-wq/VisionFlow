@@ -1,0 +1,15 @@
+{
+  "success": true,
+  "data": {
+    "vendas_mes": 128450.75,
+    "vendas_hoje": 3240.00,
+    "pedidos_em_digitacao": 3,
+    "orcamentos_em_digitacao": 1,
+    "clientes_em_digitacao": 5,
+    "pedidos_aguardando_aprovacao": 2,
+    "agendas_pendentes": 4,
+    "tarefas_pendentes": 7,
+    "notificacoes_nao_lidas": 2
+  },
+  "error": null
+}

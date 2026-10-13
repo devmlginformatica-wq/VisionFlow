@@ -1,0 +1,40 @@
+{
+  "success": true,
+  "data": [
+    {
+      "id": 24129,
+      "nome": "ALESSANDRO SILVA TOMAZ",
+      "fantasia": "ALESSANDRO SILVA TOMAZ",
+      "razao_social": "ALESSANDRO SILVA TOMAZ",
+      "cpf_cnpj": "039.441.526-46",
+      "tipo_pessoa": "PF",
+      "status": "aberto",
+      "situacao_cadastro": "em_digitacao",
+      "situacao_compra": "sem_compra",
+      "data_abertura": "2026-10-02",
+      "cor_indicador": "verde",
+      "endereco_resumo": "FAZENDA BARREIROS, 0 - ZONA RURAL",
+      "endereco_completo": "FAZENDA BARREIROS, 0 - ZONA RURAL, RIO CLARO - SP - CEP 13504-185",
+      "ultimo_pedido": null,
+      "ultimo_atendimento": null
+    },
+    {
+      "id": 5060,
+      "nome": "fantazia",
+      "fantasia": "fantazia",
+      "razao_social": "razão",
+      "cpf_cnpj": "61.186.888/0001-93",
+      "tipo_pessoa": "PJ",
+      "status": "aberto",
+      "situacao_cadastro": "em_digitacao",
+      "situacao_compra": "sem_compra",
+      "data_abertura": "2026-10-02",
+      "cor_indicador": "vermelho",
+      "endereco_resumo": "O AVENIDA 52, S/N - ALTO DO SANTANA",
+      "endereco_completo": "O AVENIDA 52, S/N - ALTO DO SANTANA, RIO CLARO - SP - CEP 13504-185",
+      "ultimo_pedido": null,
+      "ultimo_atendimento": null
+    }
+  ],
+  "error": null
+}

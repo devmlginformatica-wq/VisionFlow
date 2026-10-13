@@ -1,0 +1,8 @@
+{
+  "success": true,
+  "data": [
+    { "id": 1, "descricao": "À vista" },
+    { "id": 3, "descricao": "30/60/90 dias" }
+  ],
+  "error": null
+}

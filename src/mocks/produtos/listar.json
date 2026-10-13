@@ -1,0 +1,12 @@
+{
+  "success": true,
+  "data": [
+    { "id": 555, "codigo": "P555", "descricao": "Cabo Flexível 2,5mm",
+      "familia": "Elétrica", "marca": "Sil", "unidade": "MT",
+      "tabela_preco_padrao_id": 1, "preco_venda": 4.75 },
+    { "id": 556, "codigo": "P556", "descricao": "Disjuntor 20A",
+      "familia": "Elétrica", "marca": "Steck", "unidade": "UN",
+      "tabela_preco_padrao_id": 1, "preco_venda": 32.90 }
+  ],
+  "error": null
+}

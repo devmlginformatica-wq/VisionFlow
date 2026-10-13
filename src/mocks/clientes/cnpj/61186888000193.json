@@ -1,0 +1,21 @@
+{
+  "success": true,
+  "data": {
+    "cnpj": "61.186.888/0001-93",
+    "razao_social": "EMPRESA EXEMPLO LTDA",
+    "nome_fantasia": "Exemplo",
+    "inscricao_estadual": "123.456.789.012",
+    "email": "contato@exemplo.com.br",
+    "telefone": "(34) 98822-1845",
+    "endereco": {
+      "logradouro": "AVENIDA 52",
+      "numero": "S/N",
+      "complemento": "",
+      "bairro": "ALTO DO SANTANA",
+      "cidade": "RIO CLARO",
+      "estado": "SP",
+      "cep": "13504-185"
+    }
+  },
+  "error": null
+}

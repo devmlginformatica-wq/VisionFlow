@@ -1,0 +1,8 @@
+{
+  "success": true,
+  "data": [
+    { "id": 1, "titulo": "Pedido 1001 aguardando aprovação", "lida": false, "data": "2026-01-30T09:00:00Z" },
+    { "id": 2, "titulo": "Novo cliente cadastrado", "lida": false, "data": "2026-01-29T15:00:00Z" }
+  ],
+  "error": null
+}

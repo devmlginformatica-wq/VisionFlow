@@ -1,0 +1,8 @@
+{
+  "success": true,
+  "data": [
+    { "id": 1, "nome": "Padrão", "vigencia": "2026-12-31" },
+    { "id": 2, "nome": "Atacado", "vigencia": "2026-12-31" }
+  ],
+  "error": null
+}

@@ -1,0 +1,12 @@
+{
+  "success": true,
+  "data": {
+    "usuario": {
+      "id": 1,
+      "nome": "Régys Borges",
+      "email": "admin@visionflow.app",
+      "token": "mock-token-123"
+    }
+  },
+  "error": null
+}

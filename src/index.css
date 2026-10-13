@@ -1,0 +1,52 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* CSS variables do tema — valores padrão (turquesa Vision Flow) */
+:root {
+  --color-primary: #1AA7A4;
+  --color-primary-hover: #178F8C;
+  --color-primary-foreground: #FFFFFF;
+  --color-primary-soft: rgba(26, 167, 164, 0.1);
+  --color-primary-active: rgba(26, 167, 164, 0.12);
+  --color-canvas: #F3F7F6;
+  --color-surface: #FFFFFF;
+  --color-foreground: #1D2A2A;
+  --color-muted: #677777;
+  --color-border: #DDE6E4;
+  --color-sidebar: #153638;
+  --color-sidebar-foreground: #ECF5F3;
+  --color-sidebar-hover: rgba(236, 245, 243, 0.1);
+  --color-overlay: rgba(13, 27, 28, 0.48);
+  --color-danger: #B42318;
+  --color-danger-soft: rgba(180, 35, 24, 0.08);
+  --color-success: #21845A;
+}
+
+.dark {
+  --color-canvas: #111B1C;
+  --color-surface: #1A2728;
+  --color-foreground: #EAF1F0;
+  --color-muted: #A5B4B2;
+  --color-border: #334344;
+  --color-sidebar: #0C1718;
+  --color-sidebar-foreground: #ECF5F3;
+  --color-sidebar-hover: rgba(236, 245, 243, 0.1);
+  --color-overlay: rgba(0, 0, 0, 0.62);
+  --color-danger: #FDA29B;
+  --color-danger-soft: rgba(253, 162, 155, 0.1);
+  --color-success: #78D6AA;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}

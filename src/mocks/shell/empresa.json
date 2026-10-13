@@ -1,0 +1,15 @@
+{
+  "success": true,
+  "data": {
+    "nome": "Vision Flow Distribuidora",
+    "cnpj": "12.345.678/0001-90",
+    "regional": "Rio Claro - SP",
+    "contato": "(19) 3524-1234",
+    "usuario_logado": {
+      "id": 1,
+      "nome": "Régys Borges",
+      "email": "admin@visionflow.app"
+    }
+  },
+  "error": null
+}

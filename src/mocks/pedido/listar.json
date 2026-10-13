@@ -1,0 +1,8 @@
+{
+  "success": true,
+  "data": [
+    { "id": 1001, "numero": "1001", "tipo": "pedido", "cliente_nome": "ALESSANDRO SILVA TOMAZ",
+      "data_emissao": "2026-01-30T10:15:00Z", "total_liquido": 347.50, "status": "em_digitacao" }
+  ],
+  "error": null
+}

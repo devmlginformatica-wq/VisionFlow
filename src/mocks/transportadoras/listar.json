@@ -1,0 +1,8 @@
+{
+  "success": true,
+  "data": [
+    { "id": 7, "nome": "Transportes Silva" },
+    { "id": 8, "nome": "Rápido Central" }
+  ],
+  "error": null
+}

@@ -1,0 +1,79 @@
+import { useCallback, useEffect, useRef, useState } from 'react'
+import logger from 'loglevel'
+import { useApiRepository } from '../../../../core/api/apiClient'
+import { ApiClienteRepository } from '../../data/repositories/ApiClienteRepository'
+import { mockClienteRepository } from '../../data/repositories/MockClienteRepository'
+import type { Endereco, EnderecoInput } from '../../domain/entities/Endereco'
+import type { CnpjLookup } from '../../domain/entities/Cliente'
+
+const clienteRepository = useApiRepository ? new ApiClienteRepository() : mockClienteRepository
+
+export interface EnderecoViewModel {
+    enderecos: Endereco[]
+    loading: boolean
+    error: string | null
+    listar: () => Promise<void>
+    adicionar: (address: EnderecoInput) => Promise<Endereco>
+    adicionarConsultaCnpj: (address: CnpjLookup['address']) => void
+    editar: (address: EnderecoInput) => Promise<Endereco>
+    remover: (addressId: number) => Promise<void>
+    consultarCep: (zipCode: string) => Promise<Partial<Endereco>>
+}
+
+export function useEnderecoViewModel(clientId: number | null): EnderecoViewModel {
+    const nextTemporaryId = useRef(-1)
+    const [enderecos, setEnderecos] = useState<Endereco[]>([])
+    const [loading, setLoading] = useState(false)
+    const [error, setError] = useState<string | null>(null)
+
+    const listar = useCallback(async (): Promise<void> => {
+        setLoading(true)
+        setError(null)
+        try {
+            setEnderecos(await clienteRepository.getAddresses(clientId))
+        } catch (loadError: unknown) {
+            logger.error('Não foi possível carregar endereços.', loadError)
+            setError('Não foi possível carregar os endereços.')
+        } finally {
+            setLoading(false)
+        }
+    }, [clientId])
+
+    useEffect(() => {
+        const timeoutId = window.setTimeout(() => { void listar() }, 0)
+        return () => window.clearTimeout(timeoutId)
+    }, [listar])
+
+    async function adicionar(address: EnderecoInput): Promise<Endereco> {
+        const saved = { ...address, id: address.id ?? nextTemporaryId.current-- }
+        setEnderecos((current) => [saved, ...current])
+        return saved
+    }
+
+    function adicionarConsultaCnpj(address: CnpjLookup['address']): void {
+        const newAddress: EnderecoInput = {
+            ...address,
+            type: 'entrega',
+            purpose: 'principal',
+            reference: '',
+            deliveryRestrictions: '',
+        }
+        void adicionar(newAddress)
+    }
+
+    async function editar(address: EnderecoInput): Promise<Endereco> {
+        const saved = { ...address, id: address.id ?? nextTemporaryId.current-- }
+        setEnderecos((current) => current.map((item) => item.id === saved.id ? saved : item))
+        return saved
+    }
+
+    async function remover(addressId: number): Promise<void> {
+        setEnderecos((current) => current.filter((address) => address.id !== addressId))
+    }
+
+    async function consultarCep(zipCode: string): Promise<Partial<Endereco>> {
+        return clienteRepository.lookupZipCode(zipCode)
+    }
+
+    return { enderecos, loading, error, listar, adicionar, adicionarConsultaCnpj, editar, remover, consultarCep }
+}

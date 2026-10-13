@@ -1,0 +1,9 @@
+{
+  "success": true,
+  "data": [
+    { "id": 1, "descricao": "Dinheiro" },
+    { "id": 2, "descricao": "Boleto" },
+    { "id": 3, "descricao": "PIX" }
+  ],
+  "error": null
+}
