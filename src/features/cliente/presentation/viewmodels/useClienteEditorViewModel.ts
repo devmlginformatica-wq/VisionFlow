@@ -53,7 +53,9 @@ export function useClienteEditorViewModel(clientId: number | null): ClienteEdito
                     setError('Cliente não encontrado.')
                     return
                 }
-                setCliente(loadedClient)
+                const titles = await clienteRepository.getContasReceber(clientId)
+                if (!active) return
+                setCliente({ ...loadedClient, titles })
             } catch (loadError: unknown) {
                 logger.error('Não foi possível carregar o cliente.', loadError)
                 if (active) setError('Não foi possível carregar o cliente.')

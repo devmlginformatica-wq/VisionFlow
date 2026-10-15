@@ -19,7 +19,12 @@ interface ApiNotificacaoResponse {
     id: number
     titulo: string
     lida: boolean
-    data: string
+    data_evento: string
+}
+
+interface ApiNotificacoesPage {
+    items?: ApiNotificacaoResponse[] | null
+    nextCursor?: string | null
 }
 
 export class ApiHomeRepository implements HomeRepository {
@@ -40,14 +45,14 @@ export class ApiHomeRepository implements HomeRepository {
     }
 
     async getAvisos(): Promise<Aviso[]> {
-        const response = await apiRequest<ApiNotificacaoResponse[]>('/notificacoes')
+        const response = await apiRequest<ApiNotificacoesPage>('/notificacoes')
 
-        return response
+        return (response.items ?? [])
             .filter((notification) => !notification.lida)
             .map((notification) => ({
                 id: notification.id,
                 title: notification.titulo,
-                date: notification.data,
+                date: notification.data_evento,
             }))
     }
 }

@@ -15,6 +15,11 @@ interface ApiPedidoRow {
     status: string
 }
 
+interface ApiPedidoPage {
+    items?: ApiPedidoRow[] | null
+    nextCursor?: string | null
+}
+
 interface ApiPedidoDetalhe {
     id: number
     tipo: string
@@ -24,7 +29,9 @@ interface ApiPedidoDetalhe {
     data_emissao: string
     data_entrega?: string
     empresa?: { id: number; nome: string } | null
-    cliente?: { id: number; nome: string; cpf_cnpj: string } | null
+    cliente?: { id: number; nome_razao_social: string; cnpj_cpf: string } | null
+    cliente_nome?: string
+    cliente_cnpj_cpf?: string
     condicao_pagamento?: { id: number; descricao: string } | null
     forma_pagamento?: { id: number; descricao: string } | null
     transportadora?: { id: number; nome: string } | null
@@ -32,17 +39,17 @@ interface ApiPedidoDetalhe {
     endereco_entrega_id?: number | null
     endereco_cobranca_id?: number | null
     valor_frete?: number
-    observacoes?: string
-    observacoes_nf?: string
+    observacoes_pedido?: string
+    observacoes_nota_fiscal?: string
     itens?: Array<{
-        sequencia: number
+        sequence: number
         codigo_cliente?: string
-        produto: {
+        product: {
             id: number
-            codigo: string
+            codigo_erp: string
             descricao: string
             familia?: string
-            marca?: string
+            marca?: string | null
             unidade?: string
             peso_liquido?: number
             peso_bruto?: number
@@ -52,23 +59,30 @@ interface ApiPedidoDetalhe {
             altura_espessura?: number
             qtde_embalagem?: number
             permite_venda_sem_estoque?: boolean
+            stock?: number
         }
-        tabela_preco?: { id: number; nome: string; vigencia: string } | null
-        quantidade: number
-        preco_venda: number
-        valor_desconto: number
-        total_item: number
-        observacao?: string
+        price_table_id?: number | null
+        price_table_name?: string | null
+        price_table_validity?: string | null
+        quantidade_informada: number
+        sale_price: number
+        valor_desconto_comercial: number
+        valor_total_produtos_liquido: number
+        observacao_item?: string | null
     }>
     totais?: {
         quantidade_mix?: number
         quantidade_volume?: number
         cubagem_total?: number
+        volume_total_cubico?: number
         peso_liquido?: number
         peso_bruto?: number
         total_bruto?: number
         total_desconto?: number
         total_liquido?: number
+        valor_bruto?: number
+        valor_desconto?: number
+        valor_liquido?: number
     }
 }
 
@@ -82,9 +96,9 @@ function normalizePedidoStatus(status: string): Pedido['status'] {
 export class ApiPedidoRepository implements PedidoRepository {
     async list(type: PedidoTipo): Promise<Pedido[]> {
         const path = type === PedidoTypeEnum.Orcamento ? '/orcamentos' : '/pedidos'
-        const response = await apiRequest<ApiPedidoRow[]>(path)
+        const response = await apiRequest<ApiPedidoPage>(path)
 
-        return response.map((item) => ({
+        return (response.items ?? []).map((item) => ({
             id: item.id,
             type,
             number: item.numero,
@@ -120,7 +134,7 @@ export class ApiPedidoRepository implements PedidoRepository {
     }
 
     async getById(id: number, type: PedidoTipo): Promise<Pedido | null> {
-        const path = type === PedidoTypeEnum.Orcamento ? `/pedidos/${id}` : `/pedidos/${id}`
+        const path = type === PedidoTypeEnum.Orcamento ? `/orcamentos/${id}` : `/pedidos/${id}`
 
         try {
             const response = await apiRequest<ApiPedidoDetalhe>(path)
@@ -134,8 +148,8 @@ export class ApiPedidoRepository implements PedidoRepository {
                 deliveryDate: response.data_entrega ?? '',
                 companyId: response.empresa?.id ?? null,
                 customerId: response.cliente?.id ?? null,
-                customerName: response.cliente?.nome ?? '',
-                customerTaxId: response.cliente?.cpf_cnpj ?? '',
+                customerName: response.cliente?.nome_razao_social ?? response.cliente_nome ?? '',
+                customerTaxId: response.cliente?.cnpj_cpf ?? response.cliente_cnpj_cpf ?? '',
                 paymentConditionId: response.condicao_pagamento?.id ?? null,
                 paymentMethodId: response.forma_pagamento?.id ?? null,
                 carrierId: response.transportadora?.id ?? null,
@@ -143,46 +157,46 @@ export class ApiPedidoRepository implements PedidoRepository {
                 deliveryAddressId: response.endereco_entrega_id ?? null,
                 collectionAddressId: response.endereco_cobranca_id ?? null,
                 freightAmount: response.valor_frete ?? 0,
-                observation: response.observacoes ?? '',
-                invoiceObservation: response.observacoes_nf ?? '',
+                observation: response.observacoes_pedido ?? '',
+                invoiceObservation: response.observacoes_nota_fiscal ?? '',
                 items: (response.itens ?? []).map((item) => ({
-                    sequence: item.sequencia,
+                    sequence: item.sequence,
                     customerCode: item.codigo_cliente ?? '',
                     product: {
-                        id: item.produto.id,
-                        code: item.produto.codigo,
-                        description: item.produto.descricao,
-                        family: item.produto.familia ?? '',
-                        brand: item.produto.marca ?? '',
-                        unit: item.produto.unidade ?? '',
-                        netWeight: item.produto.peso_liquido ?? 0,
-                        grossWeight: item.produto.peso_bruto ?? 0,
-                        cubicVolume: item.produto.cubagem ?? 0,
-                        length: item.produto.comprimento ?? 0,
-                        width: item.produto.largura ?? 0,
-                        height: item.produto.altura_espessura ?? 0,
-                        packageQuantity: item.produto.qtde_embalagem ?? 0,
-                        allowsOutOfStockSale: item.produto.permite_venda_sem_estoque ?? false,
-                        stock: 0,
+                        id: item.product.id,
+                        code: item.product.codigo_erp,
+                        description: item.product.descricao,
+                        family: item.product.familia ?? '',
+                        brand: item.product.marca ?? '',
+                        unit: item.product.unidade ?? '',
+                        netWeight: item.product.peso_liquido ?? 0,
+                        grossWeight: item.product.peso_bruto ?? 0,
+                        cubicVolume: item.product.cubagem ?? 0,
+                        length: item.product.comprimento ?? 0,
+                        width: item.product.largura ?? 0,
+                        height: item.product.altura_espessura ?? 0,
+                        packageQuantity: item.product.qtde_embalagem ?? 0,
+                        allowsOutOfStockSale: item.product.permite_venda_sem_estoque ?? false,
+                        stock: item.product.stock ?? 0,
                     },
-                    priceTableId: item.tabela_preco?.id ?? 0,
-                    priceTableName: item.tabela_preco?.nome ?? '',
-                    priceTableValidity: item.tabela_preco?.vigencia ?? '',
-                    quantity: item.quantidade,
-                    salePrice: item.preco_venda,
-                    discountAmount: item.valor_desconto,
-                    total: item.total_item,
-                    observation: item.observacao ?? '',
+                    priceTableId: item.price_table_id ?? 0,
+                    priceTableName: item.price_table_name ?? '',
+                    priceTableValidity: item.price_table_validity ?? '',
+                    quantity: item.quantidade_informada,
+                    salePrice: item.sale_price,
+                    discountAmount: item.valor_desconto_comercial,
+                    total: item.valor_total_produtos_liquido,
+                    observation: item.observacao_item ?? '',
                 })),
                 totals: {
                     mixQuantity: response.totais?.quantidade_mix ?? response.itens?.length ?? 0,
                     volumeQuantity: response.totais?.quantidade_volume ?? 0,
-                    totalCubicVolume: response.totais?.cubagem_total ?? 0,
+                    totalCubicVolume: response.totais?.volume_total_cubico ?? response.totais?.cubagem_total ?? 0,
                     netWeight: response.totais?.peso_liquido ?? 0,
                     grossWeight: response.totais?.peso_bruto ?? 0,
-                    grossTotal: response.totais?.total_bruto ?? 0,
-                    discountTotal: response.totais?.total_desconto ?? 0,
-                    netTotal: response.totais?.total_liquido ?? response.itens?.reduce((total, item) => total + item.total_item, 0) ?? 0,
+                    grossTotal: response.totais?.valor_bruto ?? response.totais?.total_bruto ?? 0,
+                    discountTotal: response.totais?.valor_desconto ?? response.totais?.total_desconto ?? 0,
+                    netTotal: response.totais?.valor_liquido ?? response.totais?.total_liquido ?? response.itens?.reduce((total, item) => total + item.valor_total_produtos_liquido, 0) ?? 0,
                 },
             }
         } catch (error: unknown) {
@@ -222,20 +236,20 @@ export class ApiPedidoRepository implements PedidoRepository {
             issueDate: response.data_emissao,
             deliveryDate: response.data_entrega ?? '',
             customerOrderNumber: response.numero_cliente ?? '',
-            customerName: response.cliente?.nome ?? pedido.customerName,
-            customerTaxId: response.cliente?.cpf_cnpj ?? pedido.customerTaxId,
+            customerName: response.cliente?.nome_razao_social ?? response.cliente_nome ?? pedido.customerName,
+            customerTaxId: response.cliente?.cnpj_cpf ?? response.cliente_cnpj_cpf ?? pedido.customerTaxId,
             freightAmount: response.valor_frete ?? 0,
-            observation: response.observacoes ?? '',
-            invoiceObservation: response.observacoes_nf ?? '',
+            observation: response.observacoes_pedido ?? '',
+            invoiceObservation: response.observacoes_nota_fiscal ?? '',
             totals: {
                 mixQuantity: response.totais?.quantidade_mix ?? 0,
                 volumeQuantity: response.totais?.quantidade_volume ?? 0,
-                totalCubicVolume: response.totais?.cubagem_total ?? 0,
+                totalCubicVolume: response.totais?.volume_total_cubico ?? response.totais?.cubagem_total ?? 0,
                 netWeight: response.totais?.peso_liquido ?? 0,
                 grossWeight: response.totais?.peso_bruto ?? 0,
-                grossTotal: response.totais?.total_bruto ?? 0,
-                discountTotal: response.totais?.total_desconto ?? 0,
-                netTotal: response.totais?.total_liquido ?? 0,
+                grossTotal: response.totais?.valor_bruto ?? response.totais?.total_bruto ?? 0,
+                discountTotal: response.totais?.valor_desconto ?? response.totais?.total_desconto ?? 0,
+                netTotal: response.totais?.valor_liquido ?? response.totais?.total_liquido ?? 0,
             },
         }
     }

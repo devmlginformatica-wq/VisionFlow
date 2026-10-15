@@ -7,4 +7,5 @@ export interface Titulo {
     issueDate: string
     dueDate: string
     openAmount: number
+    situacao: 'aberto' | 'vencido' | 'pago'
 }

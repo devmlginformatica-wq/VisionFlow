@@ -1,6 +1,7 @@
 import { apiRequest } from '../../../../core/api/apiClient'
 import type { Cliente, CnpjLookup } from '../../domain/entities/Cliente'
 import type { Endereco, EnderecoInput } from '../../domain/entities/Endereco'
+import type { Titulo } from '../../domain/entities/Titulo'
 import type { ClienteRepository } from '../../domain/repositories/ClienteRepository'
 
 interface ApiClienteRow {
@@ -19,6 +20,11 @@ interface ApiClienteRow {
     endereco_completo: string
     ultimo_pedido: string | null
     ultimo_atendimento: string | null
+}
+
+interface ApiClientePage {
+    items?: ApiClienteRow[] | null
+    nextCursor?: string | null
 }
 
 interface ApiCnpjResponse {
@@ -52,6 +58,19 @@ interface ApiEnderecoResponse {
     estado: string
     ponto_referencia: string
     restricoes_entrega: string
+}
+
+interface ApiContaReceberRow {
+    id: number
+    codigo_erp: string
+    titulo_numero_documento: string
+    titulo_especie_documento: string
+    titulo_serie: string
+    titulo_numero_parcela: string
+    data_emissao: string
+    data_vencimento: string
+    valor_total_aberto: number
+    situacao: 'aberto' | 'vencido' | 'pago'
 }
 
 function mapAddress(address: ApiEnderecoResponse): Endereco {
@@ -113,8 +132,8 @@ function mapClient(row: ApiClienteRow): Cliente {
 
 export class ApiClienteRepository implements ClienteRepository {
     async list(): Promise<Cliente[]> {
-        const response = await apiRequest<ApiClienteRow[]>('/clientes')
-        return response.map(mapClient)
+        const response = await apiRequest<ApiClientePage>('/clientes')
+        return (response.items ?? []).map(mapClient)
     }
 
     async getById(id: number): Promise<Cliente | null> {
@@ -227,6 +246,22 @@ export class ApiClienteRepository implements ClienteRepository {
     async deleteAddress(clientId: number | null, addressId: number): Promise<void> {
         if (clientId === null) return
         await apiRequest<void>(`/clientes/${clientId}/enderecos/${addressId}`, { method: 'DELETE' })
+    }
+
+    async getContasReceber(clienteId: number): Promise<Titulo[]> {
+        const response = await apiRequest<ApiContaReceberRow[]>(`/clientes/${clienteId}/contas-receber`)
+
+        return (response ?? []).map((row) => ({
+            id: row.id,
+            title: row.titulo_numero_documento,
+            installment: row.titulo_numero_parcela,
+            documentType: row.titulo_especie_documento,
+            series: row.titulo_serie,
+            issueDate: row.data_emissao,
+            dueDate: row.data_vencimento,
+            openAmount: row.valor_total_aberto,
+            situacao: row.situacao,
+        }))
     }
 
     async lookupZipCode(zipCode: string): Promise<Partial<Endereco>> {

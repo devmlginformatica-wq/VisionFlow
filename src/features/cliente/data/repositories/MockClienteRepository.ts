@@ -3,6 +3,7 @@ import cnpjMock from '../../../../mocks/clientes/cnpj/61186888000193.json'
 import clientsMock from '../../../../mocks/clientes/listar.json'
 import type { Cliente, CnpjLookup } from '../../domain/entities/Cliente'
 import type { Endereco, EnderecoInput } from '../../domain/entities/Endereco'
+import type { Titulo } from '../../domain/entities/Titulo'
 import type { ClienteRepository } from '../../domain/repositories/ClienteRepository'
 
 const addressRows: Endereco[] = addressesMock.data.map((address) => ({
@@ -136,6 +137,11 @@ export class MockClienteRepository implements ClienteRepository {
         if (clientId !== null) {
             this.addresses.set(clientId, (this.addresses.get(clientId) ?? []).filter((item) => item.id !== addressId))
         }
+    }
+
+    async getContasReceber(clienteId: number): Promise<Titulo[]> {
+        const client = this.clients.find((item) => item.id === clienteId)
+        return client ? [...client.titles] : []
     }
 
     async lookupZipCode(zipCode: string): Promise<Partial<Endereco>> {

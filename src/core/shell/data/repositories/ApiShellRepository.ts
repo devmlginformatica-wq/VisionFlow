@@ -22,7 +22,7 @@ export class ApiShellRepository implements ShellRepository {
     async getShellData(): Promise<ShellData> {
         const [company, notifications] = await Promise.all([
             apiRequest<ApiCompanyResponse>('/shell/empresa'),
-            apiRequest<ApiNotificationsCounterResponse>('/shell/notificacoes'),
+            apiRequest<ApiNotificationsCounterResponse>('/notificacoes/nao-lidas/count'),
         ])
 
         return {

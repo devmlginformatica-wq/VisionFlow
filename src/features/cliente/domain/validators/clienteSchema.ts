@@ -62,6 +62,7 @@ export const clienteSchema = z.object({
         issueDate: z.string(),
         dueDate: z.string(),
         openAmount: z.number(),
+        situacao: z.enum(['aberto', 'vencido', 'pago']),
     })),
 })
 
