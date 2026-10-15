@@ -20,6 +20,74 @@ interface ApiPedidoPage {
     nextCursor?: string | null
 }
 
+interface ApiProdutoRow {
+    id: number
+    codigo_erp: string
+    descricao: string
+    familia?: string | null
+    marca?: string | null
+    unidade?: string | null
+    preco_venda: number
+    tabela_preco_padrao_id?: number | null
+}
+
+interface ApiProdutoPage {
+    items?: ApiProdutoRow[] | null
+    nextCursor?: string | null
+}
+
+interface ApiEmpresaRow {
+    id: number
+    nome: string
+    codigo_erp?: string
+}
+
+interface ApiEmpresaPage {
+    items?: ApiEmpresaRow[] | null
+    nextCursor?: string | null
+}
+
+interface ApiCondicaoPagamentoRow {
+    id: number
+    descricao: string
+}
+
+interface ApiCondicaoPagamentoPage {
+    items?: ApiCondicaoPagamentoRow[] | null
+    nextCursor?: string | null
+}
+
+interface ApiFormaPagamentoRow {
+    id: number
+    descricao: string
+}
+
+interface ApiFormaPagamentoPage {
+    items?: ApiFormaPagamentoRow[] | null
+    nextCursor?: string | null
+}
+
+interface ApiTransportadoraRow {
+    id: number
+    nome_razao: string
+}
+
+interface ApiTransportadoraPage {
+    items?: ApiTransportadoraRow[] | null
+    nextCursor?: string | null
+}
+
+interface ApiTabelaPrecoRow {
+    id: number
+    descricao: string
+    vigencia?: string | null
+}
+
+interface ApiTabelaPrecoPage {
+    items?: ApiTabelaPrecoRow[] | null
+    nextCursor?: string | null
+}
+
 interface ApiPedidoDetalhe {
     id: number
     tipo: string
@@ -94,11 +162,132 @@ function normalizePedidoStatus(status: string): Pedido['status'] {
 }
 
 export class ApiPedidoRepository implements PedidoRepository {
+    async listCompanies(): Promise<Array<{ id: number; nome: string }>> {
+        const companies: ApiEmpresaRow[] = []
+        let cursor: string | null = null
+
+        do {
+            const params = new URLSearchParams({ limit: '100' })
+            if (cursor !== null) params.set('cursor', cursor)
+            const response = await apiRequest<ApiEmpresaPage>(`/empresas?${params.toString()}`)
+            companies.push(...(response.items ?? []))
+            cursor = response.nextCursor ?? null
+        } while (cursor !== null)
+
+        return companies.map(({ id, nome }) => ({ id, nome }))
+    }
+
+    async listPaymentConditions(): Promise<Array<{ id: number; descricao: string }>> {
+        const conditions: ApiCondicaoPagamentoRow[] = []
+        let cursor: string | null = null
+
+        do {
+            const params = new URLSearchParams({ limit: '100' })
+            if (cursor !== null) params.set('cursor', cursor)
+            const response = await apiRequest<ApiCondicaoPagamentoPage>(`/condicoes-pagamento?${params.toString()}`)
+            conditions.push(...(response.items ?? []))
+            cursor = response.nextCursor ?? null
+        } while (cursor !== null)
+
+        return conditions.map(({ id, descricao }) => ({ id, descricao }))
+    }
+
+    async listPaymentMethods(): Promise<Array<{ id: number; descricao: string }>> {
+        const methods: ApiFormaPagamentoRow[] = []
+        let cursor: string | null = null
+
+        do {
+            const params = new URLSearchParams({ limit: '100' })
+            if (cursor !== null) params.set('cursor', cursor)
+            const response = await apiRequest<ApiFormaPagamentoPage>(`/formas-pagamento?${params.toString()}`)
+            methods.push(...(response.items ?? []))
+            cursor = response.nextCursor ?? null
+        } while (cursor !== null)
+
+        return methods.map(({ id, descricao }) => ({ id, descricao }))
+    }
+
+    async listCarriers(): Promise<Array<{ id: number; nome: string }>> {
+        const carriers: ApiTransportadoraRow[] = []
+        let cursor: string | null = null
+
+        do {
+            const params = new URLSearchParams({ limit: '100' })
+            if (cursor !== null) params.set('cursor', cursor)
+            const response = await apiRequest<ApiTransportadoraPage>(`/transportadoras?${params.toString()}`)
+            carriers.push(...(response.items ?? []))
+            cursor = response.nextCursor ?? null
+        } while (cursor !== null)
+
+        return carriers.map(({ id, nome_razao }) => ({ id, nome: nome_razao }))
+    }
+
+    async listPriceTables(): Promise<Array<{ id: number; nome: string; vigencia: string }>> {
+        const priceTables: ApiTabelaPrecoRow[] = []
+        let cursor: string | null = null
+
+        do {
+            const params = new URLSearchParams({ limit: '100' })
+            if (cursor !== null) params.set('cursor', cursor)
+            const response = await apiRequest<ApiTabelaPrecoPage>(`/tabelas-preco?${params.toString()}`)
+            priceTables.push(...(response.items ?? []))
+            cursor = response.nextCursor ?? null
+        } while (cursor !== null)
+
+        return priceTables.map(({ id, descricao, vigencia }) => ({
+            id,
+            nome: descricao,
+            vigencia: vigencia ?? '',
+        }))
+    }
+
+    async listProducts(): Promise<Array<{
+        id: number
+        code: string
+        description: string
+        family: string
+        brand: string
+        unit: string
+        priceTableId: number
+        salePrice: number
+    }>> {
+        const products: ApiProdutoRow[] = []
+        let cursor: string | null = null
+
+        do {
+            const params = new URLSearchParams({ limit: '100' })
+            if (cursor !== null) params.set('cursor', cursor)
+            const response = await apiRequest<ApiProdutoPage>(`/produtos?${params.toString()}`)
+            products.push(...(response.items ?? []))
+            cursor = response.nextCursor ?? null
+        } while (cursor !== null)
+
+        return products.map((product) => ({
+            id: product.id,
+            code: product.codigo_erp,
+            description: product.descricao,
+            family: product.familia ?? '',
+            brand: product.marca ?? '',
+            unit: product.unidade ?? '',
+            priceTableId: product.tabela_preco_padrao_id ?? 0,
+            salePrice: product.preco_venda,
+        }))
+    }
+
     async list(type: PedidoTipo): Promise<Pedido[]> {
         const path = type === PedidoTypeEnum.Orcamento ? '/orcamentos' : '/pedidos'
-        const response = await apiRequest<ApiPedidoPage>(path)
+        const orders: ApiPedidoRow[] = []
+        let cursor: string | null = null
 
-        return (response.items ?? []).map((item) => ({
+        do {
+            const params = new URLSearchParams({ limit: '100' })
+            if (cursor !== null) params.set('cursor', cursor)
+            const response = await apiRequest<ApiPedidoPage>(`${path}?${params.toString()}`)
+            orders.push(...(response.items ?? []))
+            cursor = response.nextCursor ?? null
+        } while (cursor !== null)
+
+        return orders.map((item) => ({
             id: item.id,
             type,
             number: item.numero,
@@ -214,7 +403,8 @@ export class ApiPedidoRepository implements PedidoRepository {
             condicao_pagamento_id: pedido.paymentConditionId,
             forma_pagamento_id: pedido.paymentMethodId,
             transportadora_id: pedido.carrierId,
-            observacoes: pedido.observation,
+            observacoes_pedido: pedido.observation,
+            observacoes_nota_fiscal: pedido.invoiceObservation,
             itens: pedido.items.map((item) => ({
                 produto_id: item.product.id,
                 quantidade: item.quantity,
@@ -223,10 +413,14 @@ export class ApiPedidoRepository implements PedidoRepository {
             })),
         }
 
-        const response = await apiRequest<ApiPedidoDetalhe>('/pedidos', {
-            method: 'POST',
-            body: JSON.stringify(payload),
-        })
+        const isUpdate = pedido.id !== null && pedido.id !== undefined
+        const response = await apiRequest<ApiPedidoDetalhe>(
+            isUpdate ? `/pedidos/${pedido.id}` : '/pedidos',
+            {
+                method: isUpdate ? 'PUT' : 'POST',
+                body: JSON.stringify(payload),
+            },
+        )
 
         return {
             ...pedido,

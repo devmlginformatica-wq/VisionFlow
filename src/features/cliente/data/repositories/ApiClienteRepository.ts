@@ -11,6 +11,17 @@ interface ApiClienteRow {
     nome_fantasia: string | null
     cnpj_cpf: string | null
     tipo_pessoa: string | null
+    inscricao_estadual_rg?: string | null
+    prospect?: boolean | null
+    telefone1?: string | null
+    telefone2?: string | null
+    celular?: string | null
+    nome_contato_comprador?: string | null
+    email_contato_comprador?: string | null
+    nome_contato_faturamento?: string | null
+    email_contato_faturamento?: string | null
+    limite_credito_total?: number | null
+    anotacao_erp?: string | null
     ativo: boolean
     cidade: string | null
     estado: string | null
@@ -26,6 +37,31 @@ interface ApiClienteRow {
 interface ApiClientePage {
     items?: ApiClienteRow[] | null
     nextCursor?: string | null
+}
+
+interface ClienteCreatePayload {
+    nome_razao_social: string
+    nome_fantasia: string
+    cnpj_cpf: string
+    inscricao_estadual_rg: string
+    tipo_pessoa: Cliente['personType']
+    prospect: boolean
+    telefone1: string
+    telefone2: string
+    celular: string
+    nome_contato_comprador: string
+    email_contato_comprador: string
+    nome_contato_faturamento: string
+    email_contato_faturamento: string
+    limite_credito_total: number
+    anotacao_erp: string
+    cep: string
+    logradouro: string
+    numero_endereco: string
+    complemento: string
+    bairro: string
+    cidade: string
+    estado: string
 }
 
 interface ApiCnpjResponse {
@@ -101,15 +137,15 @@ function mapClient(row: ApiClienteRow): Cliente {
         tradeName: row.nome_fantasia ?? '',
         taxId: row.cnpj_cpf ?? '',
         personType: row.tipo_pessoa === 'J' || row.tipo_pessoa === 'PJ' ? 'PJ' : 'PF',
-        stateRegistration: '',
-        buyerContact: '',
-        buyerEmail: '',
-        billingContact: '',
-        invoiceEmail: '',
-        commercialPhone: '',
-        mobilePhone: '',
-        otherPhone: '',
-        prospect: row.situacao_compra === 'sem_compra',
+        stateRegistration: row.inscricao_estadual_rg ?? '',
+        buyerContact: row.nome_contato_comprador ?? '',
+        buyerEmail: row.email_contato_comprador ?? '',
+        billingContact: row.nome_contato_faturamento ?? '',
+        invoiceEmail: row.email_contato_faturamento ?? '',
+        commercialPhone: row.telefone1 ?? '',
+        mobilePhone: row.celular ?? '',
+        otherPhone: row.telefone2 ?? '',
+        prospect: row.prospect ?? row.situacao_compra === 'sem_compra',
         status: row.ativo ? 'ativo' : 'inativo',
         registrationStatus: row.situacao_cadastro ?? '',
         purchaseStatus: row.situacao_compra ?? '',
@@ -125,9 +161,9 @@ function mapClient(row: ApiClienteRow): Cliente {
         priceTableId: null,
         lastVisit: '',
         integrationId: row.codigo_erp,
-        creditLimit: 0,
+        creditLimit: row.limite_credito_total ?? 0,
         userNotes: '',
-        erpNotes: '',
+        erpNotes: row.anotacao_erp ?? '',
         addresses: [],
         titles: [],
     }
@@ -163,20 +199,30 @@ export class ApiClienteRepository implements ClienteRepository {
     }
 
     async save(cliente: Cliente): Promise<Cliente> {
-        const payload = {
-            ...cliente,
-            nome: cliente.name,
-            razao_social: cliente.legalName,
-            fantasia: cliente.tradeName,
-            cpf_cnpj: cliente.taxId,
+        const address = cliente.addresses[0]
+        const payload: ClienteCreatePayload = {
+            nome_razao_social: cliente.name,
+            nome_fantasia: cliente.tradeName,
+            cnpj_cpf: cliente.taxId,
+            inscricao_estadual_rg: cliente.stateRegistration,
             tipo_pessoa: cliente.personType,
-            status: cliente.status,
-            situacao_cadastro: cliente.registrationStatus,
-            situacao_compra: cliente.purchaseStatus,
-            data_abertura: cliente.openedAt,
-            cor_indicador: cliente.indicatorColor,
-            endereco_resumo: cliente.addressSummary,
-            endereco_completo: cliente.fullAddress,
+            prospect: cliente.prospect,
+            telefone1: cliente.commercialPhone,
+            telefone2: cliente.otherPhone,
+            celular: cliente.mobilePhone,
+            nome_contato_comprador: cliente.buyerContact,
+            email_contato_comprador: cliente.buyerEmail,
+            nome_contato_faturamento: cliente.billingContact,
+            email_contato_faturamento: cliente.invoiceEmail,
+            limite_credito_total: cliente.creditLimit,
+            anotacao_erp: cliente.erpNotes,
+            cep: address?.zipCode ?? '',
+            logradouro: address?.street ?? '',
+            numero_endereco: address?.number ?? '',
+            complemento: address?.complement ?? '',
+            bairro: address?.district ?? '',
+            cidade: address?.city ?? '',
+            estado: address?.state ?? '',
         }
 
         const response = cliente.id !== null && cliente.id !== undefined

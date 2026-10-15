@@ -76,6 +76,118 @@ export function usePedidoEditorViewModel(type: PedidoTipo, orderId: number | nul
     }, [])
 
     useEffect(() => {
+        if (!useApiRepository) return
+        let active = true
+
+        async function loadCompanies(): Promise<void> {
+            try {
+                const companies = await new ApiPedidoRepository().listCompanies()
+                if (!active) return
+                setCatalogs((current) => ({ ...current, companies }))
+                if (orderId === null) {
+                    setPedido((current) => ({ ...current, companyId: companies[0]?.id ?? null }))
+                }
+            } catch (loadError: unknown) {
+                logger.error('Não foi possível carregar as empresas do pedido.', loadError)
+                if (active) setError(loadError instanceof Error ? loadError.message : pedidoStrings.loadFailed)
+            }
+        }
+
+        void loadCompanies()
+        return () => { active = false }
+    }, [orderId])
+
+    useEffect(() => {
+        if (!useApiRepository) return
+        let active = true
+
+        async function loadPaymentConditions(): Promise<void> {
+            try {
+                const paymentConditions = await new ApiPedidoRepository().listPaymentConditions()
+                if (active) setCatalogs((current) => ({ ...current, paymentConditions }))
+            } catch (loadError: unknown) {
+                logger.error('Não foi possível carregar as condições de pagamento.', loadError)
+                if (active) setError(loadError instanceof Error ? loadError.message : pedidoStrings.loadFailed)
+            }
+        }
+
+        void loadPaymentConditions()
+        return () => { active = false }
+    }, [])
+
+    useEffect(() => {
+        if (!useApiRepository) return
+        let active = true
+
+        async function loadPaymentMethods(): Promise<void> {
+            try {
+                const paymentMethods = await new ApiPedidoRepository().listPaymentMethods()
+                if (active) setCatalogs((current) => ({ ...current, paymentMethods }))
+            } catch (loadError: unknown) {
+                logger.error('Não foi possível carregar as formas de pagamento.', loadError)
+                if (active) setError(loadError instanceof Error ? loadError.message : pedidoStrings.loadFailed)
+            }
+        }
+
+        void loadPaymentMethods()
+        return () => { active = false }
+    }, [])
+
+    useEffect(() => {
+        if (!useApiRepository) return
+        let active = true
+
+        async function loadCarriers(): Promise<void> {
+            try {
+                const carriers = await new ApiPedidoRepository().listCarriers()
+                if (active) setCatalogs((current) => ({ ...current, carriers }))
+            } catch (loadError: unknown) {
+                logger.error('Não foi possível carregar as transportadoras.', loadError)
+                if (active) setError(loadError instanceof Error ? loadError.message : pedidoStrings.loadFailed)
+            }
+        }
+
+        void loadCarriers()
+        return () => { active = false }
+    }, [])
+
+    useEffect(() => {
+        if (!useApiRepository) return
+        let active = true
+
+        async function loadPriceTables(): Promise<void> {
+            try {
+                const priceTables = await new ApiPedidoRepository().listPriceTables()
+                if (active) setCatalogs((current) => ({ ...current, priceTables }))
+            } catch (loadError: unknown) {
+                logger.error('Não foi possível carregar as tabelas de preço.', loadError)
+                if (active) setError(loadError instanceof Error ? loadError.message : pedidoStrings.loadFailed)
+            }
+        }
+
+        void loadPriceTables()
+        return () => { active = false }
+    }, [])
+
+    useEffect(() => {
+        if (!useApiRepository) return
+        let active = true
+
+        async function loadProducts(): Promise<void> {
+            try {
+                const products = await new ApiPedidoRepository().listProducts()
+                if (active) setCatalogs((current) => ({ ...current, products }))
+            } catch (loadError: unknown) {
+                logger.error('Não foi possível carregar os produtos do pedido.', loadError)
+                if (active) setError(loadError instanceof Error ? loadError.message : pedidoStrings.loadFailed)
+            }
+        }
+
+        void loadProducts()
+        return () => { active = false }
+    }, [])
+
+    useEffect(() => {
         if (orderId === null) return
         let active = true
         const timeoutId = window.setTimeout(async () => {

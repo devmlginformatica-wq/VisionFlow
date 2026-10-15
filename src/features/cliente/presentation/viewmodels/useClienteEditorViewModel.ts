@@ -6,6 +6,7 @@ import { ApiClienteRepository } from '../../data/repositories/ApiClienteReposito
 import { mockClienteRepository } from '../../data/repositories/MockClienteRepository'
 import type { Cliente, CnpjLookup } from '../../domain/entities/Cliente'
 import type { ClienteFormValues } from '../../domain/validators/clienteSchema'
+import { clienteRoutes } from '../cliente.constants'
 
 const clienteRepository = useApiRepository ? new ApiClienteRepository() : mockClienteRepository
 
@@ -79,7 +80,7 @@ export function useClienteEditorViewModel(clientId: number | null): ClienteEdito
                 legalName: values.legalName || values.name,
             })
             setCliente(saved)
-            navigate(`/clientes${location.search}`, { replace: true })
+            navigate(`${clienteRoutes.list}${location.search}`, { replace: true })
         } catch (saveError: unknown) {
             logger.error('Não foi possível salvar o cliente.', saveError)
             setError(saveError instanceof Error ? saveError.message : 'Não foi possível salvar o cliente.')
@@ -92,7 +93,7 @@ export function useClienteEditorViewModel(clientId: number | null): ClienteEdito
         if (clientId === null) return
         try {
             await clienteRepository.delete(clientId)
-            navigate(`/clientes${location.search}`, { replace: true })
+            navigate(`${clienteRoutes.list}${location.search}`, { replace: true })
         } catch (deleteError: unknown) {
             logger.error('Não foi possível excluir o cliente.', deleteError)
             setError('Não foi possível excluir o cliente.')
@@ -100,7 +101,7 @@ export function useClienteEditorViewModel(clientId: number | null): ClienteEdito
     }
 
     function cancelar(): void {
-        if (isDefaultHistoryEntry.current) navigate(`/clientes${location.search}`, { replace: true })
+        if (isDefaultHistoryEntry.current) navigate(`${clienteRoutes.list}${location.search}`, { replace: true })
         else navigate(-1)
     }
 
