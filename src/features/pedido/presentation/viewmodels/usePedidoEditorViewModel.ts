@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import logger from 'loglevel'
 import { useApiRepository } from '../../../../core/api/apiClient'
+import { ApiClienteRepository } from '../../../cliente/data/repositories/ApiClienteRepository'
+import { mockClienteRepository } from '../../../cliente/data/repositories/MockClienteRepository'
 import { ApiPedidoRepository } from '../../data/repositories/ApiPedidoRepository'
 import { mockPedidoRepository, orderCatalogs } from '../../data/repositories/MockPedidoRepository'
 import type { ItemPedido } from '../../domain/entities/ItemPedido'
@@ -12,13 +14,18 @@ import type { PedidoFormValues } from '../../domain/validators/pedidoSchema'
 import { getOrderBasePath, pedidoStrings } from '../pedido.constants'
 
 const pedidoRepository = useApiRepository ? new ApiPedidoRepository() : mockPedidoRepository
+const clienteRepository = useApiRepository ? new ApiClienteRepository() : mockClienteRepository
+
+type PedidoEditorCatalogs = Omit<typeof orderCatalogs, 'clients'> & {
+    clients: Array<{ id: number; nome: string; cpf_cnpj: string }>
+}
 
 export interface PedidoEditorViewModel {
     pedido: Pedido
     itens: ItemPedido[]
     totais: Pedido['totals']
     addresses: Awaited<ReturnType<typeof mockPedidoRepository.getCustomerAddresses>>
-    catalogs: typeof orderCatalogs
+    catalogs: PedidoEditorCatalogs
     loading: boolean
     saving: boolean
     error: string | null
@@ -37,10 +44,36 @@ export function usePedidoEditorViewModel(type: PedidoTipo, orderId: number | nul
     const navigate = useNavigate()
     const [pedido, setPedido] = useState<Pedido>(() => pedidoRepository.createDraft(type))
     const [addresses, setAddresses] = useState<PedidoEditorViewModel['addresses']>([])
+    const [catalogs, setCatalogs] = useState<PedidoEditorCatalogs>(() => ({ ...orderCatalogs, clients: [] }))
     const [loading, setLoading] = useState(orderId !== null)
     const [saving, setSaving] = useState(false)
     const [error, setError] = useState<string | null>(null)
     const [reloadKey, setReloadKey] = useState(0)
+
+    useEffect(() => {
+        let active = true
+
+        async function loadClients(): Promise<void> {
+            try {
+                const clients = await clienteRepository.list()
+                if (!active) return
+                setCatalogs((current) => ({
+                    ...current,
+                    clients: clients.flatMap((client) => client.id === null ? [] : [{
+                        id: client.id,
+                        nome: client.name,
+                        cpf_cnpj: client.taxId,
+                    }]),
+                }))
+            } catch (loadError: unknown) {
+                logger.error('Não foi possível carregar os clientes do pedido.', loadError)
+                if (active) setError(loadError instanceof Error ? loadError.message : pedidoStrings.loadFailed)
+            }
+        }
+
+        void loadClients()
+        return () => { active = false }
+    }, [])
 
     useEffect(() => {
         if (orderId === null) return
@@ -68,7 +101,7 @@ export function usePedidoEditorViewModel(type: PedidoTipo, orderId: number | nul
     }, [orderId, reloadKey, type])
 
     async function setCustomer(customerId: number | null): Promise<PedidoEditorViewModel['addresses']> {
-        const customer = orderCatalogs.clients.find((item) => item.id === customerId)
+        const customer = catalogs.clients.find((item) => item.id === customerId)
         setAddresses([])
         setPedido((current) => ({ ...current, customerId, customerName: customer?.nome ?? '', customerTaxId: customer?.cpf_cnpj ?? '', billingAddressId: null, deliveryAddressId: null, collectionAddressId: null }))
         if (customerId === null) return []
@@ -107,5 +140,5 @@ export function usePedidoEditorViewModel(type: PedidoTipo, orderId: number | nul
     function cancelar(): void { navigate(-1) }
     function retry(): void { setError(null); setLoading(true); setReloadKey((key) => key + 1) }
 
-    return { pedido, itens: pedido.items, totais: pedido.totals, addresses, catalogs: orderCatalogs, loading, saving, error, setCustomer, adicionarItem, atualizarItem, removerItem, recalcularTotais, salvar, cancelar, retry }
+    return { pedido, itens: pedido.items, totais: pedido.totals, addresses, catalogs, loading, saving, error, setCustomer, adicionarItem, atualizarItem, removerItem, recalcularTotais, salvar, cancelar, retry }
 }

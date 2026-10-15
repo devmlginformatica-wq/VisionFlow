@@ -94,3 +94,8 @@ temp/
 .vercel
 .netlify
 .firebase/
+
+# Playwright
+/test-results/
+/playwright-report/
+/playwright/.cache/

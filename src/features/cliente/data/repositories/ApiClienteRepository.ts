@@ -6,20 +6,21 @@ import type { ClienteRepository } from '../../domain/repositories/ClienteReposit
 
 interface ApiClienteRow {
     id: number
-    nome: string
-    fantasia: string
-    razao_social: string
-    cpf_cnpj: string
-    tipo_pessoa: 'PF' | 'PJ'
-    status: string
-    situacao_cadastro: string
-    situacao_compra: string
-    data_abertura: string
-    cor_indicador: 'verde' | 'vermelho'
-    endereco_resumo: string
-    endereco_completo: string
-    ultimo_pedido: string | null
-    ultimo_atendimento: string | null
+    codigo_erp: string
+    nome_razao_social: string
+    nome_fantasia: string | null
+    cnpj_cpf: string | null
+    tipo_pessoa: string | null
+    ativo: boolean
+    cidade: string | null
+    estado: string | null
+    situacao_cadastro?: string | null
+    situacao_compra?: string | null
+    data_abertura?: string | null
+    cor_indicador?: 'verde' | 'vermelho' | null
+    endereco_completo?: string | null
+    ultimo_pedido?: string | null
+    ultimo_atendimento?: string | null
 }
 
 interface ApiClientePage {
@@ -91,13 +92,15 @@ function mapAddress(address: ApiEnderecoResponse): Endereco {
 }
 
 function mapClient(row: ApiClienteRow): Cliente {
+    const addressSummary = [row.cidade, row.estado].filter(Boolean).join(' - ')
+
     return {
         id: row.id,
-        name: row.nome,
-        legalName: row.razao_social,
-        tradeName: row.fantasia,
-        taxId: row.cpf_cnpj,
-        personType: row.tipo_pessoa,
+        name: row.nome_razao_social,
+        legalName: row.nome_razao_social,
+        tradeName: row.nome_fantasia ?? '',
+        taxId: row.cnpj_cpf ?? '',
+        personType: row.tipo_pessoa === 'J' || row.tipo_pessoa === 'PJ' ? 'PJ' : 'PF',
         stateRegistration: '',
         buyerContact: '',
         buyerEmail: '',
@@ -107,21 +110,21 @@ function mapClient(row: ApiClienteRow): Cliente {
         mobilePhone: '',
         otherPhone: '',
         prospect: row.situacao_compra === 'sem_compra',
-        status: row.status,
-        registrationStatus: row.situacao_cadastro,
-        purchaseStatus: row.situacao_compra,
-        openedAt: row.data_abertura,
-        indicatorColor: row.cor_indicador,
-        addressSummary: row.endereco_resumo,
-        fullAddress: row.endereco_completo,
-        lastOrder: row.ultimo_pedido,
-        lastAttendance: row.ultimo_atendimento,
+        status: row.ativo ? 'ativo' : 'inativo',
+        registrationStatus: row.situacao_cadastro ?? '',
+        purchaseStatus: row.situacao_compra ?? '',
+        openedAt: row.data_abertura ?? '',
+        indicatorColor: row.cor_indicador ?? (row.ativo ? 'verde' : 'vermelho'),
+        addressSummary,
+        fullAddress: row.endereco_completo ?? addressSummary,
+        lastOrder: row.ultimo_pedido ?? null,
+        lastAttendance: row.ultimo_atendimento ?? null,
         carrierId: null,
         paymentConditionId: null,
         paymentMethodId: null,
         priceTableId: null,
         lastVisit: '',
-        integrationId: String(row.id),
+        integrationId: row.codigo_erp,
         creditLimit: 0,
         userNotes: '',
         erpNotes: '',
@@ -132,8 +135,19 @@ function mapClient(row: ApiClienteRow): Cliente {
 
 export class ApiClienteRepository implements ClienteRepository {
     async list(): Promise<Cliente[]> {
-        const response = await apiRequest<ApiClientePage>('/clientes')
-        return (response.items ?? []).map(mapClient)
+        const clients: Cliente[] = []
+        let cursor: string | null = null
+
+        do {
+            const params = new URLSearchParams({ limit: '100' })
+            if (cursor !== null) params.set('cursor', cursor)
+
+            const response = await apiRequest<ApiClientePage>(`/clientes?${params.toString()}`)
+            clients.push(...(response.items ?? []).map(mapClient))
+            cursor = response.nextCursor ?? null
+        } while (cursor !== null)
+
+        return clients
     }
 
     async getById(id: number): Promise<Cliente | null> {

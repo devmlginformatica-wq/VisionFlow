@@ -159,8 +159,8 @@ export class ApiPedidoRepository implements PedidoRepository {
                 freightAmount: response.valor_frete ?? 0,
                 observation: response.observacoes_pedido ?? '',
                 invoiceObservation: response.observacoes_nota_fiscal ?? '',
-                items: (response.itens ?? []).map((item) => ({
-                    sequence: item.sequence,
+                items: (response.itens ?? []).map((item, index) => ({
+                    sequence: item.sequence > 0 ? item.sequence : index + 1,
                     customerCode: item.codigo_cliente ?? '',
                     product: {
                         id: item.product.id,
