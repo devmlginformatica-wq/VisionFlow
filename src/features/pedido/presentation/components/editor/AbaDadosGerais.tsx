@@ -20,6 +20,7 @@ export function AbaDadosGerais({ form, viewModel }: AbaDadosGeraisProps): React.
                 label={pedidoStrings.freight}
                 register={form.register}
                 setValue={form.setValue}
+                currencyAmount={form.watch('freightAmount')}
                 currency
                 onNumberChange={(value) =>
                     viewModel.recalcularTotais(viewModel.itens, value)

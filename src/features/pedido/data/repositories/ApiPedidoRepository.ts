@@ -154,6 +154,22 @@ interface ApiPedidoDetalhe {
     }
 }
 
+function toISODateTime(date: string | null | undefined): string | null {
+    if (!date) return null
+    if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/.test(date)) {
+        return date
+    }
+    if (/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        return `${date}T00:00:00Z`
+    }
+    if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(date)) {
+        return `${date}:00Z`
+    }
+
+    const parsed = new Date(date)
+    return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString()
+}
+
 function normalizePedidoStatus(status: string): Pedido['status'] {
     if (status === 'aguardando_aprovacao' || status === 'aprovado' || status === 'cancelado') {
         return status
@@ -345,7 +361,7 @@ export class ApiPedidoRepository implements PedidoRepository {
                 billingAddressId: response.endereco_faturamento_id ?? null,
                 deliveryAddressId: response.endereco_entrega_id ?? null,
                 collectionAddressId: response.endereco_cobranca_id ?? null,
-                freightAmount: response.valor_frete ?? 0,
+                freightAmount: Number(response.valor_frete) || 0,
                 observation: response.observacoes_pedido ?? '',
                 invoiceObservation: response.observacoes_nota_fiscal ?? '',
                 items: (response.itens ?? []).map((item, index) => ({
@@ -400,9 +416,15 @@ export class ApiPedidoRepository implements PedidoRepository {
         const payload = {
             cliente_id: pedido.customerId,
             tipo: pedido.type,
+            numero_cliente: pedido.customerOrderNumber ?? '',
+            data_entrega: toISODateTime(pedido.deliveryDate),
+            valor_frete: Number(pedido.freightAmount) || 0,
             condicao_pagamento_id: pedido.paymentConditionId,
             forma_pagamento_id: pedido.paymentMethodId,
             transportadora_id: pedido.carrierId,
+            endereco_faturamento_id: pedido.billingAddressId,
+            endereco_entrega_id: pedido.deliveryAddressId,
+            endereco_cobranca_id: pedido.collectionAddressId,
             observacoes_pedido: pedido.observation,
             observacoes_nota_fiscal: pedido.invoiceObservation,
             itens: pedido.items.map((item) => ({
@@ -432,7 +454,7 @@ export class ApiPedidoRepository implements PedidoRepository {
             customerOrderNumber: response.numero_cliente ?? '',
             customerName: response.cliente?.nome_razao_social ?? response.cliente_nome ?? pedido.customerName,
             customerTaxId: response.cliente?.cnpj_cpf ?? response.cliente_cnpj_cpf ?? pedido.customerTaxId,
-            freightAmount: response.valor_frete ?? 0,
+            freightAmount: Number(response.valor_frete) || 0,
             observation: response.observacoes_pedido ?? '',
             invoiceObservation: response.observacoes_nota_fiscal ?? '',
             totals: {

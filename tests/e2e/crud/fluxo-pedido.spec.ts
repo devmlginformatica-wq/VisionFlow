@@ -127,23 +127,65 @@ test.describe('CRUD de pedido', () => {
     await test.step('UPDATE', async () => {
       await page.getByRole('link', { name: nomeCliente }).click()
       await expect(page).toHaveURL(new RegExp(`/app/pedidos/${pedidoId}(?:\\?.*)?$`))
-      await page.getByRole('tab', { name: 'Finalização' }).click()
-      await page.getByLabel('Observações', { exact: true }).fill(observacaoEditada)
+      const customerOrderNumber = `E2E-${Date.now()}`
+      const deliveryDate = '2026-11-15'
+      const freightAmount = '51,23'
+      let deliveryAddressValue = ''
+      let collectionAddressValue = ''
 
-      const updateResponsePromise = page.waitForResponse((response) =>
-        new URL(response.url()).pathname === `/pedidos/${pedidoId}` &&
-        response.request().method() === 'PUT',
-      )
-      await page.getByRole('button', { name: 'Salvar', exact: true }).click()
-      const updateResponse = await updateResponsePromise
-      await assertResponseSucceeded(updateResponse)
-      const savedId = await getResponseId(updateResponse)
-      if (!pedidoIdsCriados.includes(savedId)) pedidoIdsCriados.push(savedId)
-      await expect(page).toHaveURL(/\/app\/pedidos(?:\?.*)?$/)
+      await test.step('Atualiza os campos e verifica persistência após recarregar', async () => {
+        await page.getByRole('tab', { name: 'Dados Gerais' }).click()
+        await page.getByLabel('Data entrega').fill(deliveryDate)
+        await page.getByLabel('Frete').fill(freightAmount)
 
-      await page.goto(`/app/pedidos/${pedidoId}`)
-      await page.getByRole('tab', { name: 'Finalização' }).click()
-      await expect(page.getByLabel('Observações', { exact: true })).toHaveValue(observacaoEditada)
+        const deliveryAddress = page.getByLabel('Endereço entrega')
+        const deliveryAddressOptions = await deliveryAddress.locator('option').evaluateAll((options) =>
+          options
+            .map((option) => option.getAttribute('value'))
+            .filter((value): value is string => Boolean(value)),
+        )
+        if (deliveryAddressOptions.length > 0) {
+          deliveryAddressValue = deliveryAddressOptions[0]
+          await deliveryAddress.selectOption(deliveryAddressValue)
+        }
+
+        const collectionAddress = page.getByLabel('Endereço cobrança')
+        const collectionAddressOptions = await collectionAddress.locator('option').evaluateAll((options) =>
+          options
+            .map((option) => option.getAttribute('value'))
+            .filter((value): value is string => Boolean(value)),
+        )
+        if (collectionAddressOptions.length > 0) {
+          collectionAddressValue = collectionAddressOptions[0]
+          await collectionAddress.selectOption(collectionAddressValue)
+        }
+
+        await page.getByRole('tab', { name: 'Finalização' }).click()
+        await page.getByLabel('Nro pedido cliente').fill(customerOrderNumber)
+        await page.getByLabel('Observações', { exact: true }).fill(observacaoEditada)
+
+        const updateResponsePromise = page.waitForResponse((response) =>
+          new URL(response.url()).pathname === `/pedidos/${pedidoId}` &&
+          response.request().method() === 'PUT',
+        )
+        await page.getByRole('button', { name: 'Salvar', exact: true }).click()
+        const updateResponse = await updateResponsePromise
+        await assertResponseSucceeded(updateResponse)
+        const savedId = await getResponseId(updateResponse)
+        if (!pedidoIdsCriados.includes(savedId)) pedidoIdsCriados.push(savedId)
+        await expect(page).toHaveURL(/\/app\/pedidos(?:\?.*)?$/)
+
+        await page.goto(`/app/pedidos/${pedidoId}`)
+        await page.reload()
+        await page.getByRole('tab', { name: 'Dados Gerais' }).click()
+        await expect(page.getByLabel('Data entrega')).toHaveValue(deliveryDate)
+        await expect(page.getByLabel('Frete')).toHaveValue(freightAmount)
+        await expect(page.getByLabel('Endereço entrega')).toHaveValue(deliveryAddressValue)
+        await expect(page.getByLabel('Endereço cobrança')).toHaveValue(collectionAddressValue)
+        await page.getByRole('tab', { name: 'Finalização' }).click()
+        await expect(page.getByLabel('Nro pedido cliente')).toHaveValue(customerOrderNumber)
+        await expect(page.getByLabel('Observações', { exact: true })).toHaveValue(observacaoEditada)
+      })
     })
 
     await test.step('DELETE', async () => {
