@@ -82,19 +82,41 @@ interface ApiCnpjResponse {
     }
 }
 
-interface ApiEnderecoResponse {
-    id: number
-    tipo: string
-    finalidade: string
+interface ApiZipCodeResponse {
     cep: string
     logradouro: string
-    numero: string
-    complemento: string
+    bairro: string
+    cidade: string
+    estado: string
+}
+
+interface ApiEnderecoResponse {
+    id: number
+    tipo_endereco: 'cobranca' | 'entrega' | 'ambos'
+    endereco_padrao: boolean
+    cep: string
+    logradouro: string
+    numero_endereco: string
+    complemento_endereco: string
     bairro: string
     cidade: string
     estado: string
     ponto_referencia: string
-    restricoes_entrega: string
+    restricoes_horarios: string
+}
+
+interface ApiEnderecoPayload {
+    tipo_endereco: 'cobranca' | 'entrega' | 'ambos'
+    endereco_padrao: boolean
+    cep: string
+    logradouro: string
+    numero_endereco: string
+    complemento_endereco: string
+    bairro: string
+    cidade: string
+    estado: string
+    ponto_referencia: string
+    restricoes_horarios: string
 }
 
 interface ApiContaReceberRow {
@@ -113,17 +135,37 @@ interface ApiContaReceberRow {
 function mapAddress(address: ApiEnderecoResponse): Endereco {
     return {
         id: address.id,
-        type: address.tipo,
-        purpose: address.finalidade,
+        type: address.tipo_endereco,
+        purpose: address.endereco_padrao ? 'principal' : 'secundario',
         zipCode: address.cep,
         street: address.logradouro,
-        number: address.numero,
-        complement: address.complemento,
+        number: address.numero_endereco,
+        complement: address.complemento_endereco,
         district: address.bairro,
         city: address.cidade,
         state: address.estado,
         reference: address.ponto_referencia,
-        deliveryRestrictions: address.restricoes_entrega,
+        deliveryRestrictions: address.restricoes_horarios,
+    }
+}
+
+function mapAddressPayload(address: EnderecoInput): ApiEnderecoPayload {
+    if (address.type !== 'cobranca' && address.type !== 'entrega' && address.type !== 'ambos') {
+        throw new Error('O tipo do endereço não é aceito pela API.')
+    }
+
+    return {
+        tipo_endereco: address.type,
+        endereco_padrao: address.purpose === 'principal',
+        cep: address.zipCode,
+        logradouro: address.street,
+        numero_endereco: address.number,
+        complemento_endereco: address.complement,
+        bairro: address.district,
+        cidade: address.city,
+        estado: address.state,
+        ponto_referencia: address.reference,
+        restricoes_horarios: address.deliveryRestrictions,
     }
 }
 
@@ -238,14 +280,14 @@ export class ApiClienteRepository implements ClienteRepository {
         const savedClient = mapClient(response)
 
         const newAddresses = cliente.addresses.filter((address) => address.id <= 0)
-        if (savedClient.id !== null && newAddresses.length > 0) {
-            const persistedAddresses = await Promise.all(
-                newAddresses.map((address) => this.saveAddress(savedClient.id, {
+        if (savedClient.id !== null) {
+            for (const address of newAddresses) {
+                await this.saveAddress(savedClient.id, {
                     ...address,
                     id: undefined,
-                })),
-            )
-            savedClient.addresses = persistedAddresses
+                })
+            }
+            savedClient.addresses = await this.getAddresses(savedClient.id)
         }
 
         return savedClient
@@ -280,12 +322,8 @@ export class ApiClienteRepository implements ClienteRepository {
     async getAddresses(clientId: number | null): Promise<Endereco[]> {
         if (clientId === null) return []
 
-        try {
-            const response = await apiRequest<ApiEnderecoResponse[]>(`/clientes/${clientId}/enderecos`)
-            return response.map(mapAddress)
-        } catch {
-            return []
-        }
+        const response = await apiRequest<ApiEnderecoResponse[]>(`/clientes/${clientId}/enderecos`)
+        return response.map(mapAddress)
     }
 
     async saveAddress(clientId: number | null, address: EnderecoInput): Promise<Endereco> {
@@ -298,22 +336,15 @@ export class ApiClienteRepository implements ClienteRepository {
 
         const response = await apiRequest<ApiEnderecoResponse>(`/clientes/${clientId}/enderecos`, {
             method: 'POST',
-            body: JSON.stringify({
-                tipo: address.type,
-                finalidade: address.purpose,
-                cep: address.zipCode,
-                logradouro: address.street,
-                numero: address.number,
-                complemento: address.complement,
-                bairro: address.district,
-                cidade: address.city,
-                estado: address.state,
-                ponto_referencia: address.reference,
-                restricoes_entrega: address.deliveryRestrictions,
-            }),
+            body: JSON.stringify(mapAddressPayload(address)),
         })
 
-        return mapAddress(response)
+        const savedAddress = mapAddress(response)
+        if (address.id !== undefined && address.id > 0) {
+            await this.deleteAddress(clientId, address.id)
+        }
+
+        return savedAddress
     }
 
     async deleteAddress(clientId: number | null, addressId: number): Promise<void> {
@@ -339,13 +370,11 @@ export class ApiClienteRepository implements ClienteRepository {
 
     async lookupZipCode(zipCode: string): Promise<Partial<Endereco>> {
         const formattedZip = zipCode.replace(/\D/g, '')
-        const response = await apiRequest<ApiCnpjResponse['endereco']>(`/cep/${formattedZip}`)
+        const response = await apiRequest<ApiZipCodeResponse>(`/cep/${formattedZip}`)
 
         return {
             zipCode: response.cep,
             street: response.logradouro,
-            number: response.numero,
-            complement: response.complemento,
             district: response.bairro,
             city: response.cidade,
             state: response.estado,

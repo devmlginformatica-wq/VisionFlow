@@ -58,7 +58,6 @@ export function useEnderecoViewModel(clientId: number | null): EnderecoViewModel
             return saved
         } catch (saveError: unknown) {
             logger.error('Não foi possível salvar o endereço.', saveError)
-            setEnderecos((current) => [localAddress, ...current])
             setError('Não foi possível salvar o endereço.')
             throw saveError
         }
@@ -76,13 +75,25 @@ export function useEnderecoViewModel(clientId: number | null): EnderecoViewModel
     }
 
     async function editar(address: EnderecoInput): Promise<Endereco> {
-        const saved = { ...address, id: address.id ?? nextTemporaryId.current-- }
-        setEnderecos((current) => current.map((item) => item.id === saved.id ? saved : item))
-        return saved
+        if (clientId === null || address.id === undefined || address.id <= 0) {
+            const saved = { ...address, id: address.id ?? nextTemporaryId.current-- }
+            setEnderecos((current) => current.map((item) => item.id === saved.id ? saved : item))
+            return saved
+        }
+
+        try {
+            const saved = await clienteRepository.saveAddress(clientId, address)
+            setEnderecos((current) => current.map((item) => item.id === address.id ? saved : item))
+            return saved
+        } catch (saveError: unknown) {
+            logger.error('Não foi possível atualizar o endereço.', saveError)
+            setError('Não foi possível atualizar o endereço.')
+            throw saveError
+        }
     }
 
     async function remover(addressId: number): Promise<void> {
-        if (clientId !== null) {
+        if (clientId !== null && addressId > 0) {
             try {
                 await clienteRepository.deleteAddress(clientId, addressId)
             } catch (deleteError: unknown) {
