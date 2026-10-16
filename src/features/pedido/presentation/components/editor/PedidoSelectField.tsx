@@ -7,6 +7,7 @@ interface PedidoSelectFieldProps {
     onChange: (value: string) => void
     children: ReactNode
     disabled?: boolean
+    error?: string
 }
 
 export function PedidoSelectField({
@@ -16,6 +17,7 @@ export function PedidoSelectField({
     onChange,
     children,
     disabled = false,
+    error,
 }: PedidoSelectFieldProps): React.JSX.Element {
     return (
         <div className="grid gap-1.5 md:grid-cols-[180px_minmax(0,1fr)] md:items-center">
@@ -26,15 +28,20 @@ export function PedidoSelectField({
                 {label}
             </label>
 
-            <select
-                id={id}
-                value={value}
-                onChange={(event) => onChange(event.target.value)}
-                disabled={disabled}
-                className="h-10 min-w-0 rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-sm disabled:bg-[var(--color-canvas)] disabled:opacity-60"
-            >
-                {children}
-            </select>
+            <div className="min-w-0">
+                <select
+                    id={id}
+                    value={value}
+                    onChange={(event) => onChange(event.target.value)}
+                    disabled={disabled}
+                    aria-invalid={Boolean(error)}
+                    aria-describedby={error ? `${id}-error` : undefined}
+                    className="h-10 w-full min-w-0 rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-sm disabled:bg-[var(--color-canvas)] disabled:opacity-60"
+                >
+                    {children}
+                </select>
+                {error && <p id={`${id}-error`} role="alert" className="mt-1 text-xs text-[var(--color-danger)]">{error}</p>}
+            </div>
         </div>
     )
 }

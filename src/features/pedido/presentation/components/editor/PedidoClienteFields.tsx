@@ -20,7 +20,7 @@ export function PedidoClienteFields({
     form,
     viewModel,
 }: PedidoClienteFieldsProps): React.JSX.Element {
-    const { register, watch, setValue } = form
+    const { register, watch, setValue, formState: { errors } } = form
 
     const customerId = watch('customerId')
 
@@ -158,9 +158,11 @@ export function PedidoClienteFields({
                         setValue(
                             'collectionAddressId',
                             selectedAddress(value),
+                            { shouldValidate: true },
                         )
                     }
                     disabled={!customerId}
+                    error={errors.collectionAddressId?.message}
                 />
             </div>
 
@@ -230,6 +232,7 @@ function PedidoAddressSelect({
     viewModel,
     onChange,
     disabled,
+    error,
 }: {
     id: string
     label: string
@@ -237,6 +240,7 @@ function PedidoAddressSelect({
     viewModel: PedidoEditorViewModel
     onChange: (value: string) => void
     disabled: boolean
+    error?: string
 }): React.JSX.Element {
     return (
         <PedidoSelectField
@@ -245,6 +249,7 @@ function PedidoAddressSelect({
             value={String(value ?? '')}
             onChange={onChange}
             disabled={disabled}
+            error={error}
         >
             <option value="">
                 {disabled

@@ -436,13 +436,18 @@ export class ApiPedidoRepository implements PedidoRepository {
         }
 
         const isUpdate = pedido.id !== null && pedido.id !== undefined
-        const response = await apiRequest<ApiPedidoDetalhe>(
+        const response = await apiRequest<ApiPedidoDetalhe | null>(
             isUpdate ? `/pedidos/${pedido.id}` : '/pedidos',
             {
                 method: isUpdate ? 'PUT' : 'POST',
                 body: JSON.stringify(payload),
             },
         )
+
+        if (response === null) {
+            if (isUpdate) return pedido
+            throw new Error('A API não retornou os dados do pedido criado.')
+        }
 
         return {
             ...pedido,
