@@ -45,9 +45,23 @@ export function useEnderecoViewModel(clientId: number | null): EnderecoViewModel
     }, [listar])
 
     async function adicionar(address: EnderecoInput): Promise<Endereco> {
-        const saved = { ...address, id: address.id ?? nextTemporaryId.current-- }
-        setEnderecos((current) => [saved, ...current])
-        return saved
+        const localAddress = { ...address, id: address.id ?? nextTemporaryId.current-- }
+
+        if (clientId === null) {
+            setEnderecos((current) => [localAddress, ...current])
+            return localAddress
+        }
+
+        try {
+            const saved = await clienteRepository.saveAddress(clientId, address)
+            setEnderecos((current) => [saved, ...current.filter((item) => item.id !== saved.id)])
+            return saved
+        } catch (saveError: unknown) {
+            logger.error('Não foi possível salvar o endereço.', saveError)
+            setEnderecos((current) => [localAddress, ...current])
+            setError('Não foi possível salvar o endereço.')
+            throw saveError
+        }
     }
 
     function adicionarConsultaCnpj(address: CnpjLookup['address']): void {
@@ -68,6 +82,15 @@ export function useEnderecoViewModel(clientId: number | null): EnderecoViewModel
     }
 
     async function remover(addressId: number): Promise<void> {
+        if (clientId !== null) {
+            try {
+                await clienteRepository.deleteAddress(clientId, addressId)
+            } catch (deleteError: unknown) {
+                logger.error('Não foi possível remover o endereço.', deleteError)
+                setError('Não foi possível remover o endereço.')
+                throw deleteError
+            }
+        }
         setEnderecos((current) => current.filter((address) => address.id !== addressId))
     }
 

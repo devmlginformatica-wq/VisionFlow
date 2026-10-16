@@ -103,9 +103,9 @@ interface ApiPedidoDetalhe {
     condicao_pagamento?: { id: number; descricao: string } | null
     forma_pagamento?: { id: number; descricao: string } | null
     transportadora?: { id: number; nome: string } | null
-    endereco_faturamento_id?: number | null
-    endereco_entrega_id?: number | null
-    endereco_cobranca_id?: number | null
+    endereco_faturamento_id: number | null
+    endereco_entrega_id: number | null
+    endereco_cobranca_id: number | null
     valor_frete?: number
     observacoes_pedido?: string
     observacoes_nota_fiscal?: string
@@ -358,9 +358,9 @@ export class ApiPedidoRepository implements PedidoRepository {
                 paymentConditionId: response.condicao_pagamento?.id ?? null,
                 paymentMethodId: response.forma_pagamento?.id ?? null,
                 carrierId: response.transportadora?.id ?? null,
-                billingAddressId: response.endereco_faturamento_id ?? null,
-                deliveryAddressId: response.endereco_entrega_id ?? null,
-                collectionAddressId: response.endereco_cobranca_id ?? null,
+                billingAddressId: response.endereco_faturamento_id,
+                deliveryAddressId: response.endereco_entrega_id,
+                collectionAddressId: response.endereco_cobranca_id,
                 freightAmount: Number(response.valor_frete) || 0,
                 observation: response.observacoes_pedido ?? '',
                 invoiceObservation: response.observacoes_nota_fiscal ?? '',
@@ -459,6 +459,9 @@ export class ApiPedidoRepository implements PedidoRepository {
             customerOrderNumber: response.numero_cliente ?? '',
             customerName: response.cliente?.nome_razao_social ?? response.cliente_nome ?? pedido.customerName,
             customerTaxId: response.cliente?.cnpj_cpf ?? response.cliente_cnpj_cpf ?? pedido.customerTaxId,
+            billingAddressId: response.endereco_faturamento_id,
+            deliveryAddressId: response.endereco_entrega_id,
+            collectionAddressId: response.endereco_cobranca_id,
             freightAmount: Number(response.valor_frete) || 0,
             observation: response.observacoes_pedido ?? '',
             invoiceObservation: response.observacoes_nota_fiscal ?? '',

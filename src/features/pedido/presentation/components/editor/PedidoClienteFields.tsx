@@ -196,15 +196,17 @@ function PedidoBillingAddress({
     viewModel: PedidoEditorViewModel
     disabled: boolean
 }): React.JSX.Element {
-    const address =
-        viewModel.addresses.find((entry) => entry.id === value) ??
-        viewModel.addresses[0]
+    const address = value === null
+        ? undefined
+        : viewModel.addresses.find((entry) => entry.id === value)
 
     const label = address
         ? `${address.street}, ${address.number} · ${address.city}`
+        : value === null && !disabled
+          ? pedidoStrings.undefinedAddress
         : disabled
-          ? 'Selecione um cliente primeiro'
-          : 'Endereço indisponível'
+          ? pedidoStrings.selectCustomerFirst
+          : pedidoStrings.addressUnavailable
 
     return (
         <div className={labelFieldGrid}>
@@ -253,8 +255,10 @@ function PedidoAddressSelect({
         >
             <option value="">
                 {disabled
-                    ? 'Selecione um cliente primeiro'
-                    : 'Selecione'}
+                    ? pedidoStrings.selectCustomerFirst
+                    : value === null
+                      ? pedidoStrings.undefinedAddress
+                      : pedidoStrings.addressUnavailable}
             </option>
 
             {viewModel.addresses.map((address) => (

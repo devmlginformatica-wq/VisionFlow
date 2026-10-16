@@ -199,7 +199,7 @@ export class ApiClienteRepository implements ClienteRepository {
     }
 
     async save(cliente: Cliente): Promise<Cliente> {
-        const address = cliente.addresses[0]
+        const primaryAddress = cliente.addresses[0]
         const payload: ClienteCreatePayload = {
             nome_razao_social: cliente.name,
             nome_fantasia: cliente.tradeName,
@@ -216,13 +216,13 @@ export class ApiClienteRepository implements ClienteRepository {
             email_contato_faturamento: cliente.invoiceEmail,
             limite_credito_total: cliente.creditLimit,
             anotacao_erp: cliente.erpNotes,
-            cep: address?.zipCode ?? '',
-            logradouro: address?.street ?? '',
-            numero_endereco: address?.number ?? '',
-            complemento: address?.complement ?? '',
-            bairro: address?.district ?? '',
-            cidade: address?.city ?? '',
-            estado: address?.state ?? '',
+            cep: primaryAddress?.zipCode ?? '',
+            logradouro: primaryAddress?.street ?? '',
+            numero_endereco: primaryAddress?.number ?? '',
+            complemento: primaryAddress?.complement ?? '',
+            bairro: primaryAddress?.district ?? '',
+            cidade: primaryAddress?.city ?? '',
+            estado: primaryAddress?.state ?? '',
         }
 
         const response = cliente.id !== null && cliente.id !== undefined
@@ -235,7 +235,20 @@ export class ApiClienteRepository implements ClienteRepository {
                 body: JSON.stringify(payload),
             })
 
-        return mapClient(response)
+        const savedClient = mapClient(response)
+
+        const newAddresses = cliente.addresses.filter((address) => address.id <= 0)
+        if (savedClient.id !== null && newAddresses.length > 0) {
+            const persistedAddresses = await Promise.all(
+                newAddresses.map((address) => this.saveAddress(savedClient.id, {
+                    ...address,
+                    id: undefined,
+                })),
+            )
+            savedClient.addresses = persistedAddresses
+        }
+
+        return savedClient
     }
 
     async delete(id: number): Promise<void> {
