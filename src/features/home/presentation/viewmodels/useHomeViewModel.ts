@@ -2,15 +2,13 @@ import { useEffect, useState } from 'react'
 import logger from 'loglevel'
 import { useAuthStore } from '../../../auth/presentation/stores/useAuthStore'
 import type { Usuario } from '../../../auth/domain/entities/Usuario'
-import { useApiRepository } from '../../../../core/api/apiClient'
 import { ApiHomeRepository } from '../../data/repositories/ApiHomeRepository'
-import { MockHomeRepository } from '../../data/repositories/MockHomeRepository'
 import type { Aviso } from '../../domain/entities/Aviso'
 import type { Indicador } from '../../domain/entities/Indicador'
 import { filteredRoute, homeIcons, homeStrings, type HomeIndicatorCardData } from '../home.constants'
 import { shellRoutes } from '../../../../core/shell/shell.constants'
 
-const homeRepository = useApiRepository ? new ApiHomeRepository() : new MockHomeRepository()
+const homeRepository = new ApiHomeRepository()
 const currencyFormatter = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
 const dateFormatter = new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'short' })
 

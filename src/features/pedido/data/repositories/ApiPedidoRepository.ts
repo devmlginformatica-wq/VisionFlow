@@ -88,6 +88,21 @@ interface ApiTabelaPrecoPage {
     nextCursor?: string | null
 }
 
+interface ApiEnderecoRow {
+    id: number
+    tipo_endereco: 'cobranca' | 'entrega' | 'ambos'
+    endereco_padrao: boolean
+    cep: string
+    logradouro: string
+    numero_endereco: string
+    complemento_endereco: string
+    bairro: string
+    cidade: string
+    estado: string
+    ponto_referencia: string
+    restricoes_horarios: string
+}
+
 interface ApiPedidoDetalhe {
     id: number
     tipo: string
@@ -483,25 +498,21 @@ export class ApiPedidoRepository implements PedidoRepository {
     }
 
     async getCustomerAddresses(customerId: number): Promise<Endereco[]> {
-        try {
-            const response = await apiRequest<Array<{ id: number; tipo: string; finalidade: string; cep: string; logradouro: string; numero: string; complemento: string; bairro: string; cidade: string; estado: string; ponto_referencia: string; restricoes_entrega: string }>>(`/clientes/${customerId}/enderecos`)
-            return response.map((address) => ({
-                id: address.id,
-                type: address.tipo,
-                purpose: address.finalidade,
-                zipCode: address.cep,
-                street: address.logradouro,
-                number: address.numero,
-                complement: address.complemento,
-                district: address.bairro,
-                city: address.cidade,
-                state: address.estado,
-                reference: address.ponto_referencia,
-                deliveryRestrictions: address.restricoes_entrega,
-            }))
-        } catch {
-            return []
-        }
+        const response = await apiRequest<ApiEnderecoRow[]>(`/clientes/${customerId}/enderecos`)
+        return response.map((address) => ({
+            id: address.id,
+            type: address.tipo_endereco,
+            purpose: address.endereco_padrao ? 'principal' : 'secundario',
+            zipCode: address.cep,
+            street: address.logradouro,
+            number: address.numero_endereco,
+            complement: address.complemento_endereco,
+            district: address.bairro,
+            city: address.cidade,
+            state: address.estado,
+            reference: address.ponto_referencia,
+            deliveryRestrictions: address.restricoes_horarios,
+        }))
     }
 
     createDraft(type: PedidoTipo): Pedido {

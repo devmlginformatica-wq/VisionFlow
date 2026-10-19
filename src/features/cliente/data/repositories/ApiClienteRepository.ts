@@ -334,17 +334,18 @@ export class ApiClienteRepository implements ClienteRepository {
             }
         }
 
-        const response = await apiRequest<ApiEnderecoResponse>(`/clientes/${clientId}/enderecos`, {
-            method: 'POST',
-            body: JSON.stringify(mapAddressPayload(address)),
-        })
+        const isUpdate = address.id !== undefined && address.id > 0
+        const response = await apiRequest<ApiEnderecoResponse>(
+            isUpdate
+                ? `/clientes/${clientId}/enderecos/${address.id}`
+                : `/clientes/${clientId}/enderecos`,
+            {
+                method: isUpdate ? 'PUT' : 'POST',
+                body: JSON.stringify(mapAddressPayload(address)),
+            },
+        )
 
-        const savedAddress = mapAddress(response)
-        if (address.id !== undefined && address.id > 0) {
-            await this.deleteAddress(clientId, address.id)
-        }
-
-        return savedAddress
+        return mapAddress(response)
     }
 
     async deleteAddress(clientId: number | null, addressId: number): Promise<void> {

@@ -1,13 +1,14 @@
 # VisionFlow
 
-VisionFlow é uma aplicação web/PWA de força de vendas, construída em React + Vite, focada em operação comercial, gestão de clientes, pedidos e orçamento. O projeto foi pensado para funcionar como front-end de referência para um ERP Delphi existente, com estrutura pronta para trocar dados mockados por integração real sem reescrever a camada visual.
+VisionFlow é uma aplicação web/PWA de força de vendas, construída em React + Vite, focada em operação comercial, gestão de clientes, pedidos e orçamento. O front-end integra os fluxos disponíveis à API VisionFlow, mantendo a camada Repository para separar o contrato HTTP da apresentação.
 
 ## Visão geral
 
 - Front-end em React 18 + TypeScript
 - Stack com Vite, Tailwind CSS, Zustand, React Router e i18next
 - Arquitetura em camadas por feature com padrão MVVM + Repository
-- Dados mockados por padrão, mas preparados para adaptação a API real
+- Integração HTTP com a API para autenticação, shell, indicadores, clientes,
+  endereços, pedidos e catálogos
 - PWA instalável e offline-first
 - Tema dinâmico com troca de cor primária, modo claro/escuro/sistema e CSS variables
 
@@ -20,7 +21,11 @@ VisionFlow é uma aplicação web/PWA de força de vendas, construída em React 
 - Agenda, tarefas e notificações
 - Shell persistente com top bar, menu lateral e navegação responsiva
 
-## Credenciais de acesso mockadas
+## Credenciais de demonstração
+
+As credenciais abaixo pertencem aos dados de demonstração locais e não são
+credenciais garantidas para a API conectada. Para autenticação real, use uma
+conta provisionada no backend.
 
 Admin:
 - E-mail: admin@visionflow.app
@@ -138,12 +143,16 @@ npm run test:e2e:report
 
 ## Conhecimento de integração
 
-O projeto já está preparado para comunicação com backend real usando:
+O projeto usa a API configurada para os fluxos disponíveis, por meio de:
 
 - Repository Pattern
 - Interfaces de domínio
-- Implementações mockadas e stubs de API
+- Repositórios HTTP baseados em `fetch`
 - Envelope de resposta padronizado
+
+No desenvolvimento, o proxy do Vite encaminha as rotas documentadas para o
+backend. Configure `VITE_API_PROXY_TARGET` no ambiente local. Em produção,
+configure `VITE_API_BASE_URL`.
 
 Formato esperado de resposta:
 
@@ -176,9 +185,11 @@ A aplicação foi preparada para uso como PWA com:
 
 ## Observações
 
-- A aplicação atual está com dados mockados e interface pronta para evolução
-- O backend real ainda não é obrigatório no fluxo atual do projeto
-- Toda a camada de apresentação foi construída para permitir troca por API sem reescrever os componentes
+- Dados locais em `src/mocks/` continuam disponíveis como fixtures e para
+  repositórios de desenvolvimento; as telas ativas utilizam os repositórios HTTP.
+- A agenda e as tarefas ainda não possuem telas integradas no shell.
+- Campos de padrões do cadastro de cliente dependem de suporte de persistência
+  no contrato da API; os catálogos são carregados pelas rotas documentadas.
 
 ## Licença
 

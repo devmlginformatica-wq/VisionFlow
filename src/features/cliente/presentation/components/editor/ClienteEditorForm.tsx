@@ -2,22 +2,25 @@ import type { UseFormReturn } from 'react-hook-form'
 import type { CnpjLookup } from '../../../domain/entities/Cliente'
 import type { ClienteFormValues } from '../../../domain/validators/clienteSchema'
 import type { EnderecoViewModel } from '../../viewmodels/useEnderecoViewModel'
+import type { ClienteEditorCatalogs } from '../../viewmodels/useClienteEditorViewModel'
 import { ClienteEditorTabPanels } from './ClienteEditorTabPanels'
 import { ClienteEditorTabs } from './ClienteEditorTabs'
 
 interface ClienteEditorFormProps {
     form: UseFormReturn<ClienteFormValues>
     addresses: EnderecoViewModel
+    catalogs: ClienteEditorCatalogs
+    catalogsLoading: boolean
     titles: ClienteFormValues['titles']
     onSubmit: (values: ClienteFormValues) => Promise<void>
     consultarCnpj: (taxId: string) => Promise<CnpjLookup>
-    onAddressFound: (address: CnpjLookup['address']) => void
+    onAddressFound: (address: CnpjLookup['address']) => Promise<void>
 }
 
-export function ClienteEditorForm({ form, addresses, titles, onSubmit, consultarCnpj, onAddressFound }: ClienteEditorFormProps): React.JSX.Element {
+export function ClienteEditorForm({ form, addresses, catalogs, catalogsLoading, titles, onSubmit, consultarCnpj, onAddressFound }: ClienteEditorFormProps): React.JSX.Element {
     return (
         <form id="cliente-editor-form" onSubmit={form.handleSubmit(onSubmit)} noValidate>
-            <ClienteEditorTabs><ClienteEditorTabPanels form={form} enderecoViewModel={addresses} titulos={titles} consultarCnpj={consultarCnpj} onAddressFound={onAddressFound} /></ClienteEditorTabs>
+            <ClienteEditorTabs><ClienteEditorTabPanels form={form} enderecoViewModel={addresses} catalogs={catalogs} catalogsLoading={catalogsLoading} titulos={titles} consultarCnpj={consultarCnpj} onAddressFound={onAddressFound} /></ClienteEditorTabs>
         </form>
     )
 }

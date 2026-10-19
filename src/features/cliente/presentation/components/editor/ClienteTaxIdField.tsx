@@ -11,7 +11,7 @@ interface ClienteTaxIdFieldProps {
     setValue: UseFormSetValue<ClienteFormValues>
     getTaxId: () => string
     consultarCnpj: (taxId: string) => Promise<CnpjLookup>
-    onAddressFound: (address: CnpjLookup['address']) => void
+    onAddressFound: (address: CnpjLookup['address']) => Promise<void>
 }
 
 export function ClienteTaxIdField({ register, setValue, getTaxId, consultarCnpj, onAddressFound }: ClienteTaxIdFieldProps): React.JSX.Element {
@@ -27,7 +27,7 @@ export function ClienteTaxIdField({ register, setValue, getTaxId, consultarCnpj,
             setValue('stateRegistration', result.stateRegistration, { shouldDirty: true })
             setValue('buyerEmail', result.email, { shouldDirty: true })
             setValue('commercialPhone', result.phone, { shouldDirty: true })
-            onAddressFound(result.address)
+            await onAddressFound(result.address)
             setLookupError(null)
         } catch (error: unknown) {
             setLookupError(error instanceof Error ? error.message : clienteStrings.consultFailed)

@@ -79,9 +79,11 @@ src/features/cliente/
 - Cada card: ícone de localização + ação excluir.
 - **Clicar no card abre o modal de edição do endereço.**
 - Botão "Adicionar Endereço" no topo direito (abre o mesmo modal, em modo criação).
-- Modal Cadastro de Endereço: tipo, CEP (busca ViaCEP mock), logradouro, número,
+- Modal Cadastro de Endereço: tipo, CEP (busca pela API `GET /cep/{cep}`), logradouro, número,
   complemento, bairro, cidade, estado, ponto de referência, restrições de entrega.
-- Endereços mantidos localmente até "Finalizar Cliente".
+- Endereços de um cliente existente são persistidos imediatamente pelas rotas
+  `POST`, `PUT` e `DELETE /clientes/{id}/enderecos`. No cadastro de um cliente novo,
+  os endereços ficam locais até o cliente receber um ID.
 
 ### Aba 3 — Padrões
 - Transportadora (padrão), Condição pgto (padrão), Forma pgto (padrão),

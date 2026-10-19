@@ -1,12 +1,10 @@
 import { useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { useApiRepository } from '../../../../core/api/apiClient'
 import { ApiAuthRepository } from '../../data/repositories/ApiAuthRepository'
-import { MockAuthRepository } from '../../data/repositories/MockAuthRepository'
 import type { LoginCredentials } from '../../domain/entities/Usuario'
 import { useAuthStore } from '../stores/useAuthStore'
 
-const authRepository = useApiRepository ? new ApiAuthRepository() : new MockAuthRepository()
+const authRepository = new ApiAuthRepository()
 
 function isRecord(value: unknown): value is Record<string, unknown> {
     return typeof value === 'object' && value !== null

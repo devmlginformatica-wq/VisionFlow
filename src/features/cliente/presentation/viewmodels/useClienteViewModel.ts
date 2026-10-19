@@ -1,13 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import logger from 'loglevel'
-import { useApiRepository } from '../../../../core/api/apiClient'
 import { ApiClienteRepository } from '../../data/repositories/ApiClienteRepository'
-import { mockClienteRepository } from '../../data/repositories/MockClienteRepository'
 import type { Cliente, CnpjLookup } from '../../domain/entities/Cliente'
 import { clienteSchema, type ClienteFormValues } from '../../domain/validators/clienteSchema'
 
-const clienteRepository = useApiRepository ? new ApiClienteRepository() : mockClienteRepository
+const clienteRepository = new ApiClienteRepository()
 
 export const clientFilters = [
     { value: 'todos', label: 'Todos' },

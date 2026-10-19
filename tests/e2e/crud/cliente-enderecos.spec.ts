@@ -59,6 +59,7 @@ test('cria múltiplos endereços, atualiza um endereço e recarrega os dados pel
     let nextAddressId = 101
     const addresses: ApiAddress[] = []
     const createdPayloads: AddressPayload[] = []
+    const updatedAddresses: Array<{ id: number; payload: AddressPayload }> = []
     const deletedAddressIds: number[] = []
 
     await page.addInitScript(() => {
@@ -80,6 +81,11 @@ test('cria múltiplos endereços, atualiza um endereço e recarrega os dados pel
     await page.route('**/notificacoes/nao-lidas/count', async (route) => {
         await route.fulfill({ json: { success: true, data: { nao_lidas: 0 }, error: null } })
     })
+    for (const path of ['transportadoras', 'condicoes-pagamento', 'formas-pagamento', 'tabelas-preco']) {
+        await page.route(`**/${path}**`, async (route) => {
+            await route.fulfill({ json: { success: true, data: { items: [], nextCursor: null }, error: null } })
+        })
+    }
     await page.route('**/clientes/**', async (route) => {
         const url = new URL(route.request().url())
         const method = route.request().method()
@@ -106,6 +112,22 @@ test('cria múltiplos endereços, atualiza um endereço e recarrega os dados pel
             return
         }
         const addressPath = url.pathname.match(new RegExp(`^/clientes/${clientId}/enderecos/(\\d+)$`))
+        if (addressPath && method === 'PUT') {
+            const addressId = Number(addressPath[1])
+            const payload = parseAddressPayload(route.request().postDataJSON())
+            updatedAddresses.push({ id: addressId, payload })
+            const index = addresses.findIndex((address) => address.id === addressId)
+            if (index < 0) {
+                await route.fulfill({ status: 404, json: { success: false, data: null, error: { message: 'Endereço não encontrado.' } } })
+                return
+            }
+            if (payload.endereco_padrao) {
+                addresses.forEach((address) => { address.endereco_padrao = false })
+            }
+            addresses[index] = { id: addressId, ...payload }
+            await route.fulfill({ json: { success: true, data: addresses[index], error: null } })
+            return
+        }
         if (addressPath && method === 'DELETE') {
             const addressId = Number(addressPath[1])
             deletedAddressIds.push(addressId)
@@ -185,13 +207,15 @@ test('cria múltiplos endereços, atualiza um endereço e recarrega os dados pel
     await editDialog.getByRole('button', { name: 'Salvar' }).click()
     await expect(editDialog).toBeHidden()
 
-    expect(createdPayloads).toHaveLength(3)
-    expect(createdPayloads[2]).toMatchObject({
+    expect(createdPayloads).toHaveLength(2)
+    expect(updatedAddresses).toHaveLength(1)
+    expect(updatedAddresses[0].id).toBe(101)
+    expect(updatedAddresses[0].payload).toMatchObject({
         logradouro: 'Rua Endereço Atualizado',
         numero_endereco: '99',
         endereco_padrao: true,
     })
-    expect(deletedAddressIds).toEqual([101])
+    expect(deletedAddressIds).toEqual([])
     await expect(page.getByText('Rua Endereço Atualizado, 99')).toBeVisible()
     await expect(page.getByText('Rua Primeiro Cadastro, 10')).toHaveCount(0)
 

@@ -37,7 +37,7 @@ export function ClienteEditorPage(): React.JSX.Element {
         <section className="mx-auto w-full max-w-5xl space-y-5 pb-20">
             <ClienteEditorHeader clientId={clientId} saving={viewModel.saving} onCancel={viewModel.cancelar} onDelete={() => void viewModel.excluir()} />
             {viewModel.error && <VfError message={viewModel.error} retryLabel={clienteStrings.tryAgain} onRetry={viewModel.retry} />}
-            {loading ? <ClienteEditorSkeleton /> : <ClienteEditorForm form={form} addresses={enderecoViewModel} titles={viewModel.cliente.titles} onSubmit={submit} consultarCnpj={viewModel.consultarCnpj} onAddressFound={enderecoViewModel.adicionarConsultaCnpj} />}
+            {loading ? <ClienteEditorSkeleton /> : <ClienteEditorForm form={form} addresses={enderecoViewModel} catalogs={viewModel.catalogs} catalogsLoading={viewModel.catalogsLoading} titles={viewModel.cliente.titles} onSubmit={submit} consultarCnpj={viewModel.consultarCnpj} onAddressFound={enderecoViewModel.adicionarConsultaCnpj} />}
         </section>
     )
 }

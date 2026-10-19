@@ -55,6 +55,7 @@ export default defineConfig(({ mode }) => {
         '/tarefas': proxyOptions,
         '/notificacoes': proxyOptions,
         '/shell': proxyOptions,
+        '/cep': proxyOptions,
         '/empresas': proxyOptions,
         '/condicoes-pagamento': proxyOptions,
         '/formas-pagamento': proxyOptions,

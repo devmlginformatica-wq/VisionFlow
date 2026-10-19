@@ -1,12 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import logger from 'loglevel'
-import { useApiRepository } from '../../../../core/api/apiClient'
 import { ApiClienteRepository } from '../../data/repositories/ApiClienteRepository'
-import { mockClienteRepository } from '../../data/repositories/MockClienteRepository'
 import type { Endereco, EnderecoInput } from '../../domain/entities/Endereco'
 import type { CnpjLookup } from '../../domain/entities/Cliente'
 
-const clienteRepository = useApiRepository ? new ApiClienteRepository() : mockClienteRepository
+const clienteRepository = new ApiClienteRepository()
 
 export interface EnderecoViewModel {
     enderecos: Endereco[]
@@ -14,7 +12,7 @@ export interface EnderecoViewModel {
     error: string | null
     listar: () => Promise<void>
     adicionar: (address: EnderecoInput) => Promise<Endereco>
-    adicionarConsultaCnpj: (address: CnpjLookup['address']) => void
+    adicionarConsultaCnpj: (address: CnpjLookup['address']) => Promise<void>
     editar: (address: EnderecoInput) => Promise<Endereco>
     remover: (addressId: number) => Promise<void>
     consultarCep: (zipCode: string) => Promise<Partial<Endereco>>
@@ -63,7 +61,7 @@ export function useEnderecoViewModel(clientId: number | null): EnderecoViewModel
         }
     }
 
-    function adicionarConsultaCnpj(address: CnpjLookup['address']): void {
+    async function adicionarConsultaCnpj(address: CnpjLookup['address']): Promise<void> {
         const newAddress: EnderecoInput = {
             ...address,
             type: 'entrega',
@@ -71,7 +69,7 @@ export function useEnderecoViewModel(clientId: number | null): EnderecoViewModel
             reference: '',
             deliveryRestrictions: '',
         }
-        void adicionar(newAddress)
+        await adicionar(newAddress)
     }
 
     async function editar(address: EnderecoInput): Promise<Endereco> {

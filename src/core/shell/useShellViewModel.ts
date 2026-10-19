@@ -1,12 +1,10 @@
 import { useEffect, useState } from 'react'
 import logger from 'loglevel'
-import { useApiRepository } from '../api/apiClient'
 import { ApiShellRepository } from './data/repositories/ApiShellRepository'
-import { MockShellRepository } from './data/repositories/MockShellRepository'
 import type { ShellData } from './domain/entities/ShellData'
 import { kStr } from './shell.constants'
 
-const shellRepository = useApiRepository ? new ApiShellRepository() : new MockShellRepository()
+const shellRepository = new ApiShellRepository()
 
 export interface ShellViewModel {
     company: ShellData['company'] | null

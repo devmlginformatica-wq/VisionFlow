@@ -8,7 +8,7 @@ import { ClienteTaxIdField } from './ClienteTaxIdField'
 interface AbaDadosGeraisProps {
     form: UseFormReturn<ClienteFormValues>
     consultarCnpj: (taxId: string) => Promise<CnpjLookup>
-    onAddressFound: (address: CnpjLookup['address']) => void
+    onAddressFound: (address: CnpjLookup['address']) => Promise<void>
 }
 
 export function AbaDadosGerais({ form, consultarCnpj, onAddressFound }: AbaDadosGeraisProps): React.JSX.Element {

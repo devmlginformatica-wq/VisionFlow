@@ -1,14 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import logger from 'loglevel'
-import { useApiRepository } from '../../../../core/api/apiClient'
 import { ApiPedidoRepository } from '../../data/repositories/ApiPedidoRepository'
-import { mockPedidoRepository } from '../../data/repositories/MockPedidoRepository'
 import type { Pedido } from '../../domain/entities/Pedido'
 import type { PedidoTipo } from '../../domain/entities/PedidoTipo'
 import { pedidoStrings } from '../pedido.constants'
 
-const pedidoRepository = useApiRepository ? new ApiPedidoRepository() : mockPedidoRepository
+const pedidoRepository = new ApiPedidoRepository()
 
 export interface PedidoListaViewModel {
     pedidos: Pedido[]

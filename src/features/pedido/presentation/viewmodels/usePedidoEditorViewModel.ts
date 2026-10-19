@@ -1,11 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import logger from 'loglevel'
-import { useApiRepository } from '../../../../core/api/apiClient'
 import { ApiClienteRepository } from '../../../cliente/data/repositories/ApiClienteRepository'
-import { mockClienteRepository } from '../../../cliente/data/repositories/MockClienteRepository'
 import { ApiPedidoRepository } from '../../data/repositories/ApiPedidoRepository'
-import { mockPedidoRepository, orderCatalogs } from '../../data/repositories/MockPedidoRepository'
 import type { ItemPedido } from '../../domain/entities/ItemPedido'
 import type { Pedido } from '../../domain/entities/Pedido'
 import { PedidoTipo } from '../../domain/entities/PedidoTipo'
@@ -13,18 +10,24 @@ import { calcularPedidoTotais } from '../../domain/services/PedidoTotais'
 import type { PedidoFormValues } from '../../domain/validators/pedidoSchema'
 import { getOrderBasePath, pedidoStrings } from '../pedido.constants'
 
-const pedidoRepository = useApiRepository ? new ApiPedidoRepository() : mockPedidoRepository
-const clienteRepository = useApiRepository ? new ApiClienteRepository() : mockClienteRepository
+const pedidoRepository = new ApiPedidoRepository()
+const clienteRepository = new ApiClienteRepository()
 
-type PedidoEditorCatalogs = Omit<typeof orderCatalogs, 'clients'> & {
+type PedidoEditorCatalogs = {
+    companies: Awaited<ReturnType<ApiPedidoRepository['listCompanies']>>
     clients: Array<{ id: number; nome: string; cpf_cnpj: string }>
+    paymentConditions: Awaited<ReturnType<ApiPedidoRepository['listPaymentConditions']>>
+    paymentMethods: Awaited<ReturnType<ApiPedidoRepository['listPaymentMethods']>>
+    carriers: Awaited<ReturnType<ApiPedidoRepository['listCarriers']>>
+    priceTables: Awaited<ReturnType<ApiPedidoRepository['listPriceTables']>>
+    products: Awaited<ReturnType<ApiPedidoRepository['listProducts']>>
 }
 
 export interface PedidoEditorViewModel {
     pedido: Pedido
     itens: ItemPedido[]
     totais: Pedido['totals']
-    addresses: Awaited<ReturnType<typeof mockPedidoRepository.getCustomerAddresses>>
+    addresses: Awaited<ReturnType<ApiPedidoRepository['getCustomerAddresses']>>
     catalogs: PedidoEditorCatalogs
     loading: boolean
     saving: boolean
@@ -44,7 +47,15 @@ export function usePedidoEditorViewModel(type: PedidoTipo, orderId: number | nul
     const navigate = useNavigate()
     const [pedido, setPedido] = useState<Pedido>(() => pedidoRepository.createDraft(type))
     const [addresses, setAddresses] = useState<PedidoEditorViewModel['addresses']>([])
-    const [catalogs, setCatalogs] = useState<PedidoEditorCatalogs>(() => ({ ...orderCatalogs, clients: [] }))
+    const [catalogs, setCatalogs] = useState<PedidoEditorCatalogs>({
+        companies: [],
+        clients: [],
+        paymentConditions: [],
+        paymentMethods: [],
+        carriers: [],
+        priceTables: [],
+        products: [],
+    })
     const [loading, setLoading] = useState(orderId !== null)
     const [saving, setSaving] = useState(false)
     const [error, setError] = useState<string | null>(null)
@@ -76,12 +87,11 @@ export function usePedidoEditorViewModel(type: PedidoTipo, orderId: number | nul
     }, [])
 
     useEffect(() => {
-        if (!useApiRepository) return
         let active = true
 
         async function loadCompanies(): Promise<void> {
             try {
-                const companies = await new ApiPedidoRepository().listCompanies()
+                const companies = await pedidoRepository.listCompanies()
                 if (!active) return
                 setCatalogs((current) => ({ ...current, companies }))
                 if (orderId === null) {
@@ -98,12 +108,11 @@ export function usePedidoEditorViewModel(type: PedidoTipo, orderId: number | nul
     }, [orderId])
 
     useEffect(() => {
-        if (!useApiRepository) return
         let active = true
 
         async function loadPaymentConditions(): Promise<void> {
             try {
-                const paymentConditions = await new ApiPedidoRepository().listPaymentConditions()
+                const paymentConditions = await pedidoRepository.listPaymentConditions()
                 if (active) setCatalogs((current) => ({ ...current, paymentConditions }))
             } catch (loadError: unknown) {
                 logger.error('Não foi possível carregar as condições de pagamento.', loadError)
@@ -116,12 +125,11 @@ export function usePedidoEditorViewModel(type: PedidoTipo, orderId: number | nul
     }, [])
 
     useEffect(() => {
-        if (!useApiRepository) return
         let active = true
 
         async function loadPaymentMethods(): Promise<void> {
             try {
-                const paymentMethods = await new ApiPedidoRepository().listPaymentMethods()
+                const paymentMethods = await pedidoRepository.listPaymentMethods()
                 if (active) setCatalogs((current) => ({ ...current, paymentMethods }))
             } catch (loadError: unknown) {
                 logger.error('Não foi possível carregar as formas de pagamento.', loadError)
@@ -134,12 +142,11 @@ export function usePedidoEditorViewModel(type: PedidoTipo, orderId: number | nul
     }, [])
 
     useEffect(() => {
-        if (!useApiRepository) return
         let active = true
 
         async function loadCarriers(): Promise<void> {
             try {
-                const carriers = await new ApiPedidoRepository().listCarriers()
+                const carriers = await pedidoRepository.listCarriers()
                 if (active) setCatalogs((current) => ({ ...current, carriers }))
             } catch (loadError: unknown) {
                 logger.error('Não foi possível carregar as transportadoras.', loadError)
@@ -152,12 +159,11 @@ export function usePedidoEditorViewModel(type: PedidoTipo, orderId: number | nul
     }, [])
 
     useEffect(() => {
-        if (!useApiRepository) return
         let active = true
 
         async function loadPriceTables(): Promise<void> {
             try {
-                const priceTables = await new ApiPedidoRepository().listPriceTables()
+                const priceTables = await pedidoRepository.listPriceTables()
                 if (active) setCatalogs((current) => ({ ...current, priceTables }))
             } catch (loadError: unknown) {
                 logger.error('Não foi possível carregar as tabelas de preço.', loadError)
@@ -170,12 +176,11 @@ export function usePedidoEditorViewModel(type: PedidoTipo, orderId: number | nul
     }, [])
 
     useEffect(() => {
-        if (!useApiRepository) return
         let active = true
 
         async function loadProducts(): Promise<void> {
             try {
-                const products = await new ApiPedidoRepository().listProducts()
+                const products = await pedidoRepository.listProducts()
                 if (active) setCatalogs((current) => ({ ...current, products }))
             } catch (loadError: unknown) {
                 logger.error('Não foi possível carregar os produtos do pedido.', loadError)

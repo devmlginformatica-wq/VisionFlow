@@ -1,14 +1,28 @@
 import { useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import logger from 'loglevel'
-import { useApiRepository } from '../../../../core/api/apiClient'
 import { ApiClienteRepository } from '../../data/repositories/ApiClienteRepository'
-import { mockClienteRepository } from '../../data/repositories/MockClienteRepository'
+import { ApiPedidoRepository } from '../../../pedido/data/repositories/ApiPedidoRepository'
 import type { Cliente, CnpjLookup } from '../../domain/entities/Cliente'
 import type { ClienteFormValues } from '../../domain/validators/clienteSchema'
-import { clienteRoutes } from '../cliente.constants'
+import { clienteRoutes, clienteStrings } from '../cliente.constants'
 
-const clienteRepository = useApiRepository ? new ApiClienteRepository() : mockClienteRepository
+const clienteRepository = new ApiClienteRepository()
+const catalogRepository = new ApiPedidoRepository()
+
+export interface ClienteEditorCatalogs {
+    carriers: Awaited<ReturnType<ApiPedidoRepository['listCarriers']>>
+    paymentConditions: Awaited<ReturnType<ApiPedidoRepository['listPaymentConditions']>>
+    paymentMethods: Awaited<ReturnType<ApiPedidoRepository['listPaymentMethods']>>
+    priceTables: Awaited<ReturnType<ApiPedidoRepository['listPriceTables']>>
+}
+
+const emptyCatalogs: ClienteEditorCatalogs = {
+    carriers: [],
+    paymentConditions: [],
+    paymentMethods: [],
+    priceTables: [],
+}
 
 const emptyClient: Cliente = {
     id: null,
@@ -23,6 +37,8 @@ const emptyClient: Cliente = {
 
 export interface ClienteEditorViewModel {
     cliente: Cliente
+    catalogs: ClienteEditorCatalogs
+    catalogsLoading: boolean
     loading: boolean
     saving: boolean
     error: string | null
@@ -37,11 +53,37 @@ export function useClienteEditorViewModel(clientId: number | null): ClienteEdito
     const location = useLocation()
     const navigate = useNavigate()
     const [cliente, setCliente] = useState<Cliente>(emptyClient)
+    const [catalogs, setCatalogs] = useState<ClienteEditorCatalogs>(emptyCatalogs)
+    const [catalogsLoading, setCatalogsLoading] = useState(true)
     const [loading, setLoading] = useState(clientId !== null)
     const [saving, setSaving] = useState(false)
     const [error, setError] = useState<string | null>(null)
     const [reloadKey, setReloadKey] = useState(0)
     const isDefaultHistoryEntry = useRef(location.key === 'default')
+
+    useEffect(() => {
+        let active = true
+
+        async function loadCatalogs(): Promise<void> {
+            try {
+                const [carriers, paymentConditions, paymentMethods, priceTables] = await Promise.all([
+                    catalogRepository.listCarriers(),
+                    catalogRepository.listPaymentConditions(),
+                    catalogRepository.listPaymentMethods(),
+                    catalogRepository.listPriceTables(),
+                ])
+                if (active) setCatalogs({ carriers, paymentConditions, paymentMethods, priceTables })
+            } catch (loadError: unknown) {
+                logger.error('Não foi possível carregar os catálogos do cliente.', loadError)
+                if (active) setError(clienteStrings.catalogLoadFailed)
+            } finally {
+                if (active) setCatalogsLoading(false)
+            }
+        }
+
+        void loadCatalogs()
+        return () => { active = false }
+    }, [reloadKey])
 
     useEffect(() => {
         if (clientId === null) return
@@ -107,10 +149,10 @@ export function useClienteEditorViewModel(clientId: number | null): ClienteEdito
 
     function retry(): void {
         setError(null)
-        if (clientId === null) return
-        setLoading(true)
+        setLoading(clientId !== null)
+        setCatalogsLoading(true)
         setReloadKey((key) => key + 1)
     }
 
-    return { cliente, loading, saving, error, consultarCnpj, salvar, excluir, cancelar, retry }
+    return { cliente, catalogs, catalogsLoading, loading, saving, error, consultarCnpj, salvar, excluir, cancelar, retry }
 }
