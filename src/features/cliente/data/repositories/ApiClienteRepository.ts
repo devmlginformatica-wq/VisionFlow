@@ -32,6 +32,12 @@ interface ApiClienteRow {
     endereco_completo?: string | null
     ultimo_pedido?: string | null
     ultimo_atendimento?: string | null
+    transportadora_padrao_id?: number | null
+    condicao_pagamento_padrao_id?: number | null
+    forma_pagamento_padrao_id?: number | null
+    tabela_preco_padrao_id?: number | null
+    data_ultima_visita?: string | null
+    anotacao_usuario?: string | null
 }
 
 interface ApiClientePage {
@@ -55,6 +61,12 @@ interface ClienteCreatePayload {
     email_contato_faturamento: string
     limite_credito_total: number
     anotacao_erp: string
+    transportadora_padrao_id: number | null
+    condicao_pagamento_padrao_id: number | null
+    forma_pagamento_padrao_id: number | null
+    tabela_preco_padrao_id: number | null
+    data_ultima_visita: string | null
+    anotacao_usuario: string
     cep: string
     logradouro: string
     numero_endereco: string
@@ -197,14 +209,14 @@ function mapClient(row: ApiClienteRow): Cliente {
         fullAddress: row.endereco_completo ?? addressSummary,
         lastOrder: row.ultimo_pedido ?? null,
         lastAttendance: row.ultimo_atendimento ?? null,
-        carrierId: null,
-        paymentConditionId: null,
-        paymentMethodId: null,
-        priceTableId: null,
-        lastVisit: '',
+        carrierId: row.transportadora_padrao_id ?? null,
+        paymentConditionId: row.condicao_pagamento_padrao_id ?? null,
+        paymentMethodId: row.forma_pagamento_padrao_id ?? null,
+        priceTableId: row.tabela_preco_padrao_id ?? null,
+        lastVisit: row.data_ultima_visita ?? '',
         integrationId: row.codigo_erp,
         creditLimit: row.limite_credito_total ?? 0,
-        userNotes: '',
+        userNotes: row.anotacao_usuario ?? '',
         erpNotes: row.anotacao_erp ?? '',
         addresses: [],
         titles: [],
@@ -258,6 +270,12 @@ export class ApiClienteRepository implements ClienteRepository {
             email_contato_faturamento: cliente.invoiceEmail,
             limite_credito_total: cliente.creditLimit,
             anotacao_erp: cliente.erpNotes,
+            transportadora_padrao_id: cliente.carrierId,
+            condicao_pagamento_padrao_id: cliente.paymentConditionId,
+            forma_pagamento_padrao_id: cliente.paymentMethodId,
+            tabela_preco_padrao_id: cliente.priceTableId,
+            data_ultima_visita: cliente.lastVisit || null,
+            anotacao_usuario: cliente.userNotes,
             cep: primaryAddress?.zipCode ?? '',
             logradouro: primaryAddress?.street ?? '',
             numero_endereco: primaryAddress?.number ?? '',

@@ -1,4 +1,5 @@
 import { expect, test } from './fixtures'
+import type { Locator } from '@playwright/test'
 import {
     createClientViaApi,
     createUniqueAddressNumber,
@@ -12,6 +13,21 @@ import {
     responseErrorCode,
     responseId,
 } from './real-api-helpers'
+
+async function selectLastAvailableOption(select: Locator, fieldName: string): Promise<number> {
+    await expect(select).toBeEnabled()
+    const value = await select.locator('option').evaluateAll((options) => {
+        const values = options
+            .map((option) => option.getAttribute('value'))
+            .filter((optionValue): optionValue is string => optionValue !== null && Number(optionValue) > 0)
+        return values[values.length - 1] ?? null
+    })
+    if (value === null) {
+        throw new Error(`O catálogo real não tem opções para ${fieldName}.`)
+    }
+    await select.selectOption(value)
+    return Number(value)
+}
 
 test.describe('Clientes com API real', () => {
     let clientIds: number[] = []
@@ -197,6 +213,68 @@ test.describe('Clientes com API real', () => {
         await expect(page).toHaveURL(/\/app\/clientes(?:\?.*)?$/)
         await page.getByRole('textbox', { name: 'Pesquisar Cliente...' }).fill(editedName)
         await expect(page.getByRole('link').filter({ hasText: editedName })).toHaveCount(0)
+    })
+
+    test('persiste padrões comerciais e última visita pela aba Padrões', async ({ page }) => {
+        const clientId = await createClientViaApi(page, createUniqueName('Padrões persistidos'))
+        clientIds.push(clientId)
+
+        await page.goto(`/app/clientes/${clientId}`)
+        await page.getByRole('tab', { name: 'Padrões' }).click()
+
+        const carrierId = await selectLastAvailableOption(
+            page.getByLabel('Transportadora (padrão)'),
+            'transportadora padrão',
+        )
+        const paymentConditionId = await selectLastAvailableOption(
+            page.getByLabel('Condição pgto (padrão)'),
+            'condição de pagamento padrão',
+        )
+        const paymentMethodId = await selectLastAvailableOption(
+            page.getByLabel('Forma pgto (padrão)'),
+            'forma de pagamento padrão',
+        )
+        const priceTableId = await selectLastAvailableOption(
+            page.getByLabel('Tabela preço (padrão)'),
+            'tabela de preço padrão',
+        )
+        const lastVisit = new Date(
+            Date.now() - (Math.floor(Math.random() * 3650) + 1) * 24 * 60 * 60 * 1000,
+        ).toISOString().slice(0, 10)
+        await page.getByLabel('Dt. Última Visita').fill(lastVisit)
+
+        const updateResponsePromise = page.waitForResponse((response) =>
+            new URL(response.url()).pathname === `/clientes/${clientId}` &&
+            response.request().method() === 'PUT',
+        )
+        await page.getByRole('button', { name: 'Salvar', exact: true }).click()
+        const updateResponse = await updateResponsePromise
+        expect(updateResponse.ok()).toBeTruthy()
+        await expect(page).toHaveURL(/\/app\/clientes(?:\?.*)?$/)
+
+        await page.goto(`/app/clientes/${clientId}`)
+        await page.reload()
+        await page.getByRole('tab', { name: 'Padrões' }).click()
+        await expect(page.getByLabel('Transportadora (padrão)')).toHaveValue(String(carrierId))
+        await expect(page.getByLabel('Condição pgto (padrão)')).toHaveValue(String(paymentConditionId))
+        await expect(page.getByLabel('Forma pgto (padrão)')).toHaveValue(String(paymentMethodId))
+        await expect(page.getByLabel('Tabela preço (padrão)')).toHaveValue(String(priceTableId))
+        await expect(page.getByLabel('Dt. Última Visita')).toHaveValue(lastVisit)
+
+        const persistedResponse = await page.request.get(`/clientes/${clientId}`, {
+            headers: await getAuthHeaders(page),
+        })
+        expect(persistedResponse.ok()).toBeTruthy()
+        const persistedClient = await responseData(persistedResponse)
+        expect(isRecord(persistedClient)).toBeTruthy()
+        if (!isRecord(persistedClient)) {
+            throw new Error('A resposta real do cliente não tem o formato esperado.')
+        }
+        expect(persistedClient.transportadora_padrao_id).toBe(carrierId)
+        expect(persistedClient.condicao_pagamento_padrao_id).toBe(paymentConditionId)
+        expect(persistedClient.forma_pagamento_padrao_id).toBe(paymentMethodId)
+        expect(persistedClient.tabela_preco_padrao_id).toBe(priceTableId)
+        expect(persistedClient.data_ultima_visita).toBe(lastVisit)
     })
 
     test('recebe do backend os erros reais para documento inválido e campos obrigatórios vazios', async ({ page }) => {

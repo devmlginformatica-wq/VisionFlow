@@ -38,7 +38,7 @@ export function AbaPadroes({ register, catalogs, catalogsLoading }: AbaPadroesPr
     return (
         <div className="space-y-4">
             {catalogsLoading && <p role="status" className="text-sm text-[var(--color-muted)]">{clienteStrings.loadingDefaults}</p>}
-            <p className="text-sm text-[var(--color-muted)]">{clienteStrings.defaultsNotPersisted}</p>
+            <p className="text-sm text-[var(--color-muted)]">{clienteStrings.defaultsPersisted}</p>
             <ClienteSelectField name="carrierId" label={clienteStrings.carrier} register={register} options={carrierOptions} disabled={disabled} />
             <ClienteSelectField name="paymentConditionId" label={clienteStrings.paymentCondition} register={register} options={conditionOptions} disabled={disabled} />
             <ClienteSelectField name="paymentMethodId" label={clienteStrings.paymentMethod} register={register} options={methodOptions} disabled={disabled} />
