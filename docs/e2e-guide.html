@@ -1,0 +1,534 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <meta name="description" content="Guia da suíte E2E do VisionFlow com Playwright e integração com a API Go real.">
+  <title>Guia de Testes E2E — VisionFlow</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --page: #f5f8fa;
+      --surface: #fff;
+      --surface-muted: #edf3f5;
+      --ink: #182a35;
+      --muted: #4d626e;
+      --line: #d3dfe4;
+      --brand: #087f7c;
+      --brand-dark: #075d5b;
+      --brand-soft: #e0f3f1;
+      --warning: #795313;
+      --warning-soft: #fff3d6;
+      --code: #14232d;
+      --code-ink: #f0f6f8;
+      --shadow: 0 10px 30px rgb(24 42 53 / 7%);
+      --radius: 14px;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-synthesis: none;
+      text-rendering: optimizeLegibility;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; scroll-padding-top: 1rem; }
+    body {
+      margin: 0;
+      background: var(--page);
+      color: var(--ink);
+      font-size: 1rem;
+      line-height: 1.65;
+    }
+    a { color: var(--brand-dark); text-underline-offset: .18em; }
+    a:hover { color: var(--brand); }
+    a:focus-visible, button:focus-visible {
+      outline: 3px solid #ed9b25;
+      outline-offset: 3px;
+      border-radius: 4px;
+    }
+    code, pre { font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace; }
+    code { font-size: .92em; }
+    p { margin: .65rem 0 1rem; }
+    h1, h2, h3 { line-height: 1.2; text-wrap: balance; }
+    h1 { max-width: 18ch; margin: 0; font-size: clamp(2.35rem, 6vw, 4.2rem); letter-spacing: -.045em; }
+    h2 { margin: 0 0 1rem; font-size: clamp(1.55rem, 3vw, 2rem); letter-spacing: -.025em; }
+    h3 { margin: 1.65rem 0 .55rem; font-size: 1.12rem; }
+    ul, ol { padding-left: 1.35rem; }
+    li + li { margin-top: .35rem; }
+    .skip-link {
+      position: absolute;
+      top: .5rem;
+      left: .5rem;
+      z-index: 10;
+      padding: .6rem .9rem;
+      transform: translateY(-160%);
+      border-radius: 8px;
+      background: var(--surface);
+      color: var(--ink);
+    }
+    .skip-link:focus { transform: translateY(0); }
+    .hero {
+      position: relative;
+      overflow: hidden;
+      padding: clamp(2.5rem, 8vw, 6.2rem) max(1.2rem, calc((100vw - 1180px) / 2));
+      background: linear-gradient(125deg, #e4f4f2 0%, #f8fbfc 58%, #eaf1f8 100%);
+      border-bottom: 1px solid var(--line);
+    }
+    .hero::after {
+      position: absolute;
+      right: -4rem;
+      bottom: -10rem;
+      width: 25rem;
+      height: 25rem;
+      border: 1px solid rgb(8 127 124 / 18%);
+      border-radius: 50%;
+      box-shadow: 0 0 0 2rem rgb(8 127 124 / 4%), 0 0 0 4rem rgb(8 127 124 / 3%);
+      content: "";
+      pointer-events: none;
+    }
+    .hero-inner { position: relative; z-index: 1; max-width: 1180px; margin: 0 auto; }
+    .eyebrow {
+      margin: 0 0 1rem;
+      color: var(--brand-dark);
+      font-size: .8rem;
+      font-weight: 800;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+    }
+    .subtitle { max-width: 55ch; margin: 1rem 0 1.35rem; color: var(--muted); font-size: clamp(1.1rem, 2.5vw, 1.35rem); }
+    .meta { display: flex; flex-wrap: wrap; gap: .55rem; }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      min-height: 2rem;
+      padding: .25rem .7rem;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgb(255 255 255 / 80%);
+      color: var(--ink);
+      font-size: .86rem;
+      font-weight: 650;
+    }
+    .hero-note { max-width: 62ch; margin-top: 1.5rem; padding: .8rem 1rem; border-left: 4px solid var(--brand); background: rgb(255 255 255 / 75%); }
+    .layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.5rem; max-width: 1280px; margin: 0 auto; padding: 1.25rem; }
+    nav {
+      align-self: start;
+      padding: 1rem;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--surface);
+      box-shadow: var(--shadow);
+    }
+    nav h2 { margin: 0 0 .7rem; font-size: 1rem; }
+    nav ol { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .25rem .8rem; margin: 0; padding-left: 1.25rem; }
+    nav li { padding: .12rem 0; font-size: .9rem; }
+    nav a { text-decoration: none; }
+    main { min-width: 0; }
+    section {
+      margin-bottom: 1.25rem;
+      padding: clamp(1.15rem, 3vw, 2rem);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--surface);
+      box-shadow: var(--shadow);
+    }
+    section > :last-child { margin-bottom: 0; }
+    .lead { max-width: 76ch; color: var(--muted); font-size: 1.08rem; }
+    .callout {
+      margin: 1rem 0;
+      padding: 1rem 1.1rem;
+      border: 1px solid #a8d6d2;
+      border-left: 5px solid var(--brand);
+      border-radius: 8px;
+      background: var(--brand-soft);
+    }
+    .callout.warning { border-color: #ead08e; border-left-color: #a56c08; background: var(--warning-soft); }
+    .callout strong { display: block; margin-bottom: .2rem; }
+    .muted { color: var(--muted); }
+    .small { font-size: .9rem; }
+    .diagram { display: grid; grid-template-columns: 1fr; gap: .55rem; margin: 1.2rem 0; }
+    .node {
+      padding: .8rem 1rem;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      background: var(--surface-muted);
+      text-align: center;
+      font-weight: 700;
+    }
+    .node.api { border-color: #9dcac7; background: var(--brand-soft); }
+    .arrow { color: var(--muted); font-size: 1.2rem; text-align: center; line-height: 1; }
+    .table-wrap { overflow-x: auto; margin: 1rem 0; border: 1px solid var(--line); border-radius: 10px; }
+    table { width: 100%; border-collapse: collapse; text-align: left; }
+    th, td { padding: .72rem .8rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+    th { background: var(--surface-muted); color: var(--ink); font-size: .88rem; }
+    tr:last-child td { border-bottom: 0; }
+    td { min-width: 9rem; }
+    td:first-child { min-width: 13rem; font-weight: 650; }
+    .status { display: inline-block; padding: .15rem .5rem; border-radius: 999px; font-size: .82rem; font-weight: 750; white-space: nowrap; }
+    .status.done { background: #e5f4e9; color: #205d32; }
+    .status.open { background: #fff0d5; color: #704a0d; }
+    .codebox { position: relative; margin: 1rem 0; }
+    .codebox pre {
+      overflow: auto;
+      margin: 0;
+      padding: 1rem 1.15rem;
+      border: 1px solid #273e4c;
+      border-radius: 10px;
+      background: var(--code);
+      color: var(--code-ink);
+      font-size: .89rem;
+      line-height: 1.6;
+      tab-size: 2;
+    }
+    .codebox code { color: inherit; white-space: pre; }
+    .copy {
+      position: absolute;
+      top: .55rem;
+      right: .55rem;
+      min-height: 2.1rem;
+      padding: .35rem .65rem;
+      border: 1px solid #6f8794;
+      border-radius: 6px;
+      background: #203743;
+      color: white;
+      cursor: pointer;
+      font: inherit;
+      font-size: .8rem;
+    }
+    .copy:hover { background: #2b4b59; }
+    .step { padding-left: .2rem; }
+    .step li { padding-left: .2rem; }
+    .inline-list { display: flex; flex-wrap: wrap; gap: .45rem; padding: 0; list-style: none; }
+    .inline-list li { margin: 0; padding: .22rem .6rem; border-radius: 6px; background: var(--surface-muted); font-size: .9rem; }
+    footer { max-width: 1280px; margin: 0 auto; padding: 1rem 1.25rem 2.5rem; color: var(--muted); font-size: .9rem; }
+
+    @media (min-width: 820px) {
+      .layout { grid-template-columns: 245px minmax(0, 1fr); gap: 1.8rem; padding: 2rem 1.5rem; }
+      nav { position: sticky; top: 1rem; }
+      nav ol { grid-template-columns: 1fr; }
+      .diagram { grid-template-columns: 1fr auto 1fr auto 1fr auto 1fr; align-items: center; }
+      .arrow { transform: none; }
+      td:first-child { min-width: 14rem; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body id="top">
+  <a class="skip-link" href="#conteudo">Pular para o conteúdo</a>
+  <header class="hero">
+    <div class="hero-inner">
+      <p class="eyebrow">VisionFlow · qualidade e integração</p>
+      <h1>Guia de Testes E2E — VisionFlow</h1>
+      <p class="subtitle">Playwright + React + API Go real (sem mocks)</p>
+      <div class="meta" aria-label="Metadados do documento">
+        <span class="pill">Gerado em 19/10/2026</span>
+        <span class="pill">Versão do frontend: 0.0.0</span>
+        <span class="pill">Playwright: ^1.64.1</span>
+      </div>
+      <p class="hero-note"><strong>Este guia descreve a suíte real; não usa mocks de rede.</strong> Uma exceção do spec legado com interceptações está destacada nas seções de arquitetura e boas práticas.</p>
+    </div>
+  </header>
+
+  <div class="layout">
+    <nav aria-label="Navegação do guia">
+      <h2>Neste guia</h2>
+      <ol>
+        <li><a href="#visao-geral">Visão Geral</a></li>
+        <li><a href="#pre-requisitos">Pré-requisitos</a></li>
+        <li><a href="#execucao">Como Executar</a></li>
+        <li><a href="#arquitetura">Arquitetura da Suíte</a></li>
+        <li><a href="#novos-testes">Criar Novos Testes</a></li>
+        <li><a href="#boas-praticas">Boas Práticas</a></li>
+        <li><a href="#divergencias">Divergências</a></li>
+        <li><a href="#resultado">Resultado Atual</a></li>
+      </ol>
+    </nav>
+
+    <main id="conteudo">
+      <section id="visao-geral" aria-labelledby="h-overview">
+        <h2 id="h-overview">1. Visão Geral</h2>
+        <p class="lead">A suíte cobre autenticação, clientes, pedidos, contas a receber e indicadores da Home. Os specs `*-real.spec.ts` exercitam a interface contra dados e endpoints reais da API Go, sem substituição da rede.</p>
+        <p>O Playwright abre a aplicação Vite em <code>http://localhost:5173</code>. No modo de desenvolvimento, chamadas relativas são encaminhadas pelo proxy do Vite para a API real, por padrão em <code>http://localhost:8080</code>. O alvo pode ser alterado com <code>VITE_API_PROXY_TARGET</code>.</p>
+        <p>Essa integração evidencia divergências de contrato que mocks podem ocultar. O relatório de apoio, <a href="../../RELATORIO_DIVERGENCIAS_E2E.md">RELATORIO_DIVERGENCIAS_E2E.md</a>, registra incompatibilidades, riscos de estado do banco e os ajustes já identificados.</p>
+
+        <h3>Fluxo da requisição</h3>
+        <div class="diagram" role="img" aria-label="Playwright acessa Vite na porta 5173, que encaminha as requisições para a API Go na porta 8080 e o PostgreSQL">
+          <div class="node">Playwright<br><span class="muted">navegador Chromium</span></div>
+          <div class="arrow" aria-hidden="true">→</div>
+          <div class="node">Vite dev server<br><span class="muted">localhost:5173</span></div>
+          <div class="arrow" aria-hidden="true">→</div>
+          <div class="node api">API Go<br><span class="muted">localhost:8080</span></div>
+          <div class="arrow" aria-hidden="true">→</div>
+          <div class="node">PostgreSQL<br><span class="muted">schema + dados locais</span></div>
+        </div>
+
+        <h3>Specs existentes e cobertura observada</h3>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Arquivo</th><th>Cobertura observada no spec</th><th>Integração</th></tr></thead>
+            <tbody>
+              <tr><td><code>tests/e2e/auth.spec.ts</code></td><td>Login válido do tenant 4, login inválido, validação de e-mail vazio e logout.</td><td>API real para autenticação; validação de formulário na UI.</td></tr>
+              <tr><td><code>tests/e2e/home.spec.ts</code></td><td>Indicadores da Home e ausência de erros no console/página.</td><td>API real.</td></tr>
+              <tr><td><code>tests/e2e/clientes.spec.ts</code></td><td>Lista ao menos um cliente; abre cadastro e aba Títulos.</td><td>Dados reais já existentes.</td></tr>
+              <tr><td><code>tests/e2e/clientes-real.spec.ts</code></td><td>Lista/busca por nome, CPF e CNPJ; cria, edita e remove cliente; cria, edita e exclui endereço; valida erros reais de cliente.</td><td>API real via UI e `page.request`; limpeza real.</td></tr>
+              <tr><td><code>tests/e2e/crud/fluxo-cliente.spec.ts</code></td><td>CRUD de cliente pela interface e remoção via API no cleanup.</td><td>API real.</td></tr>
+              <tr><td><code>tests/e2e/crud/cliente-enderecos.spec.ts</code></td><td>Criação/edição e recarga de endereços com verificação do payload.</td><td><strong>Simulado:</strong> usa <code>page.route</code> para interceptar rotas.</td></tr>
+              <tr><td><code>tests/e2e/pedidos.spec.ts</code></td><td>Abre pedido existente e verifica cliente, item, total, ausência de 404 e erros de browser.</td><td>Dados reais já existentes.</td></tr>
+              <tr><td><code>tests/e2e/pedidos-real.spec.ts</code></td><td>Cria pedido com cliente/produto reais; edita item e totais; finaliza e verifica persistência/filtro; testa erros reais.</td><td>API real via UI e `page.request`; limpeza real.</td></tr>
+              <tr><td><code>tests/e2e/crud/fluxo-pedido.spec.ts</code></td><td>CRUD de pedido, incluindo cliente/endereço auxiliar, edição, recarga e remoção.</td><td>API real.</td></tr>
+              <tr><td><code>tests/e2e/contas-receber.spec.ts</code></td><td>Abre títulos de cliente existente e confere linhas e totais.</td><td>Dados reais já existentes.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="pre-requisitos" aria-labelledby="h-prereq">
+        <h2 id="h-prereq">2. Pré-requisitos</h2>
+        <ul>
+          <li><strong>Node.js e npm:</strong> o <code>package.json</code> não declara faixa em <code>engines</code>; use uma versão de Node compatível com Vite 8 e os pacotes do lockfile. O projeto tem <code>package-lock.json</code>.</li>
+          <li><strong>Playwright:</strong> dependência de desenvolvimento <code>@playwright/test ^1.64.1</code>; instale também o browser Chromium. Em Linux, <code>--with-deps</code> instala dependências de sistema.</li>
+          <li><strong>API:</strong> Go 1.25+ e API escutando em <code>http://localhost:8080</code> (ou endereço compatível configurado no proxy do Vite). Consulte o <a href="../../visionflow-api/README.md">README da API</a>.</li>
+          <li><strong>Banco:</strong> PostgreSQL 16 com migrations Flyway aplicadas. A configuração fica em <code>visionflow-api/db/flyway.conf</code> (copiada do exemplo local) e as migrations em <code>visionflow-api/db/migrations/</code>.</li>
+          <li><strong>Seeds:</strong> os specs de leitura e os logins precisam dos dados de demonstração do tenant 4. O cenário está em <code>visionflow-api/db/seeds/demo_comercial/</code> e pode ser aplicado por <code>apply_all.sh</code> em ambiente de desenvolvimento.</li>
+        </ul>
+        <p>O <a href="../../visionflow-api/compose.yaml">compose.yaml</a> define PostgreSQL 16 e um container de workspace, mas não define um serviço da API nem publica uma porta do Postgres para o host. Confira onde a API será executada e se o <code>DB_HOST</code> configurado consegue alcançar o banco. No modo Compose, a senha <code>DB_PASSWORD</code> deve estar definida para interpolação.</p>
+        <p>Para a API executada no host, o <a href="../../visionflow-api/.env.example">.env.example</a> documenta as variáveis de conexão, <code>PORT</code> e <code>JWT_SECRET</code>. Copie para <code>.env</code> e configure valores locais; não reutilize segredos de produção.</p>
+
+        <h3>Preparar banco, seeds e API</h3>
+        <p>Na raiz de <code>visionflow-api/</code>, configure o ambiente local, aplique migrations e seeds de demonstração e inicie o servidor. O Flyway 13.7.0 é descrito no README da API. O script de seeds informa os requisitos de conexão e deve ser usado somente em desenvolvimento.</p>
+        <div class="codebox">
+          <button class="copy" type="button" aria-label="Copiar comandos para iniciar a API" data-copy>Copiar</button>
+          <pre><code>cd visionflow-api
+cp .env.example .env
+# Edite .env com valores locais para PostgreSQL e JWT_SECRET.
+cp db/flyway.conf.example db/flyway.conf
+# Configure a conexao local no flyway.conf.
+flyway -configFiles=./db/flyway.conf info
+flyway -configFiles=./db/flyway.conf migrate
+./db/seeds/demo_comercial/apply_all.sh
+go run ./cmd/api</code></pre>
+        </div>
+        <p class="small muted">Se o banco for recriado, <code>db/scripts/reset_db.sh</code> apaga os dados e aplica migrations; reaplique os seeds depois. Não execute esse script sem aceitar a perda dos dados do banco local.</p>
+
+        <div class="callout warning">
+          <strong>409 ao criar endereço: confira o estado do banco</strong>
+          Nesta sessão, o HTTP 409 <code>RECURSO_DUPLICADO</code> coincidiu com uma sequência PostgreSQL de códigos de endereço atrasada em relação aos códigos existentes. A sequência local foi sincronizada; isso é estado do banco, não mudança de código. Se o problema reaparecer, confirme o nome efetivo da sequência/tabela no ambiente antes de executar uma correção.
+        </div>
+        <p>Para a estrutura local descrita nesta sessão, o comando idempotente abaixo posiciona o próximo valor após o maior <code>codigo</code> já armazenado. Execute apenas no banco de desenvolvimento correto:</p>
+        <div class="codebox">
+          <button class="copy" type="button" aria-label="Copiar comando SQL" data-copy>Copiar</button>
+          <pre><code>SELECT setval(
+  pg_get_serial_sequence('cliente_endereco_adicional', 'codigo'),
+  COALESCE((SELECT MAX(codigo) FROM cliente_endereco_adicional), 0) + 1,
+  false
+);</code></pre>
+        </div>
+        <p class="small muted">O script <code>visionflow-api/db/scripts/reset_db.sh</code> recria o banco e aplica migrations, mas apaga todos os dados. Use somente em desenvolvimento e não o trate como rotina de correção para banco compartilhado; depois do reset, reaplique os seeds necessários.</p>
+      </section>
+
+      <section id="execucao" aria-labelledby="h-run">
+        <h2 id="h-run">3. Como Executar</h2>
+        <p>Prepare primeiro o banco, migrations e seeds conforme o <a href="../../visionflow-api/README.md">README da API</a>. Suba a API Go em outro terminal com o banco acessível. A configuração atual da UI usa Vite como proxy; não é necessário apontar o browser diretamente para o serviço Go.</p>
+
+        <h3>Instalação e suíte completa</h3>
+        <div class="codebox">
+          <button class="copy" type="button" aria-label="Copiar comandos de instalação e teste" data-copy>Copiar</button>
+          <pre><code>cd VisionFlow
+npm ci
+npx playwright install
+npm run test:e2e</code></pre>
+        </div>
+        <p>Em Linux, instale browsers e dependências do sistema com <code>npx playwright install --with-deps</code>. A configuração do Playwright inicia <code>npm run dev</code> automaticamente em <code>http://localhost:5173</code>.</p>
+
+        <h3>Execuções direcionadas e diagnóstico</h3>
+        <div class="codebox">
+          <button class="copy" type="button" aria-label="Copiar comandos de execução direcionada" data-copy>Copiar</button>
+          <pre><code># Um arquivo real de cliente
+npx playwright test tests/e2e/clientes-real.spec.ts
+
+# Testes cujo título contém esta expressão
+npx playwright test -g "cria pedido"
+
+# Browser visível
+npx playwright test --headed
+
+# Gravar trace nesta execução
+npx playwright test --trace on
+npx playwright show-trace test-results/&lt;diretorio-do-teste&gt;/trace.zip
+
+# Abrir o relatório HTML mais recente
+npx playwright show-report</code></pre>
+        </div>
+        <p class="small muted">O projeto também define <code>npm run test:e2e:report</code> como atalho para <code>playwright show-report</code>. O local concreto do trace varia por teste e execução; use o caminho produzido pelo Playwright.</p>
+
+        <h3>Configuração e credenciais</h3>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Configuração</th><th>Valor/comportamento observado</th></tr></thead>
+            <tbody>
+              <tr><td><code>baseURL</code></td><td><code>http://localhost:5173</code>, definida diretamente em <code>playwright.config.ts</code>; não é lida de variável de ambiente nesse arquivo.</td></tr>
+              <tr><td><code>VITE_API_PROXY_TARGET</code></td><td>Alvo do proxy do Vite. O padrão é <code>http://localhost:8080</code>.</td></tr>
+              <tr><td>Credenciais de teste</td><td>Os fixtures <code>loginTenant4</code> e <code>loginAdmin</code> chamam <code>loginComo</code> com contas locais existentes no banco/seeds. Os valores de senha não são reproduzidos neste guia; os fixtures atuais mantêm essas credenciais no código e não leem variáveis de ambiente.</td></tr>
+              <tr><td>Browser / trace</td><td>Projeto Chromium; trace <code>on-first-retry</code>, screenshot <code>only-on-failure</code>, vídeo <code>retain-on-failure</code>.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>Diagnóstico rápido</h3>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Sintoma observado</th><th>Causa provável baseada no código/histórico</th><th>Ação</th></tr></thead>
+            <tbody>
+              <tr><td><code>browserType.launch: Executable doesn't exist</code></td><td>Browser Playwright não instalado.</td><td>Execute <code>npx playwright install</code> (em Linux, considere <code>--with-deps</code>).</td></tr>
+              <tr><td><code>409 RECURSO_DUPLICADO</code> na criação do endereço</td><td>Dados repetidos ou, no ambiente diagnosticado, sequência PostgreSQL desatualizada.</td><td>Use CEP/número únicos e cleanup; se persistir, confira e sincronize a sequência do banco local descrita acima.</td></tr>
+              <tr><td>Timeout esperando <code>POST /pedidos</code></td><td>O formulário pode não enviar se faltar uma pré-condição, como endereço de cobrança válido; o trace da falha mostrou essa situação.</td><td>Confira validação e Network no trace; registre <code>waitForResponse</code> antes do clique e complete os campos obrigatórios.</td></tr>
+              <tr><td>Pedido/cliente esperado não aparece em teste de leitura</td><td>Dados de demonstração do tenant 4 ausentes ou incompatíveis com o ambiente.</td><td>Verifique migrations e seeds locais antes de usar <code>reset_db.sh</code>; reaplique o cenário demo apenas em desenvolvimento.</td></tr>
+              <tr><td><code>Failed to fetch</code> nos catálogos</td><td>API indisponível, proxy apontando para o host incorreto ou banco/API inacessíveis.</td><td>Confirme API na porta 8080, <code>VITE_API_PROXY_TARGET</code> e conectividade da API com o PostgreSQL.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="small muted">O sintoma de 404 em <code>/pedidos/{id}</code> não foi incluído como diagnóstico de seed: os specs e o histórico consultados não confirmam essa relação causal.</p>
+      </section>
+
+      <section id="arquitetura" aria-labelledby="h-architecture">
+        <h2 id="h-architecture">4. Arquitetura da Suíte</h2>
+        <h3>Fixtures</h3>
+        <p><code>tests/e2e/fixtures.ts</code> estende o fixture oficial do Playwright e exporta <code>test</code> e <code>expect</code>. O <code>page</code> vem do fixture Playwright padrão e herda o <code>baseURL</code> configurado. A função <code>loginComo(email, senha)</code> abre <code>/login</code>, preenche os campos por labels acessíveis, clica Entrar e aguarda a URL raiz. <code>loginTenant4()</code> e <code>loginAdmin()</code> são atalhos para contas de teste locais.</p>
+
+        <h3>Helpers para API real</h3>
+        <p><code>tests/e2e/real-api-helpers.ts</code> lê o token de autenticação do localStorage do browser e constrói o cabeçalho <code>Authorization</code> para <code>page.request</code>; valida e desempacota respostas; extrai IDs; gera CPF/CNPJ com dígitos verificadores; e cria nomes e números de endereço dinâmicos. Também exporta:</p>
+        <ul>
+          <li><code>createClientViaApi</code> e <code>createAddressViaApi</code> para setup contra a API real;</li>
+          <li><code>deleteAddressViaApi</code> para remover endereço real; somente HTTP 404 é tratado como já removido, e outros erros falham explicitamente;</li>
+          <li><code>listRealProducts</code> para percorrer páginas do catálogo real, e <code>formatBRL</code> para asserções de moeda.</li>
+        </ul>
+
+        <div class="callout">
+          <strong>Regra para suítes de integração real</strong>
+          Os specs `*-real.spec.ts` não devem usar <code>page.route</code>, MSW, interceptação de rede nem importar dados de <code>src/mocks/</code>. Configure dados reais via API, navegue pela UI e verifique persistência contra o servidor.
+        </div>
+        <div class="callout warning">
+          <strong>Exceção já existente no conjunto E2E</strong>
+          <code>crud/cliente-enderecos.spec.ts</code> usa várias chamadas <code>page.route</code> e respostas simuladas para testar o contrato/comportamento isolado do editor de endereços. Portanto, não é um teste de integração com API real e não satisfaz a regra acima. A tabela de specs marca essa diferença; a decisão de migrá-lo ou mantê-lo como teste isolado fica como TODO de escopo, sem alteração neste guia.
+        </div>
+
+        <h3>Ciclo de vida recomendado</h3>
+        <ol>
+          <li>Fazer login pelo fixture e, quando necessário, criar registros auxiliares via API real.</li>
+          <li>Executar a ação principal pela interface usando nomes acessíveis e esperar respostas quando a chamada fizer parte da asserção.</li>
+          <li>Verificar resultado na UI e, quando necessário, confirmar persistência com GET real.</li>
+          <li>Limpar registros no <code>afterEach</code>/<code>afterAll</code>, sempre que possível com API real; tolerar apenas os casos explicitamente idempotentes, como DELETE 404 de endereço.</li>
+        </ol>
+        <p class="small muted">Nos specs existentes, o login e cleanup usam hooks por teste, compatíveis com o fixture <code>page</code>. Esse fixture tem escopo de teste; não o use diretamente em <code>beforeAll</code>/<code>afterAll</code>. Se o setup exigir interação com página, prefira <code>beforeEach</code>/<code>afterEach</code> ou crie e feche explicitamente um contexto de browser próprio.</p>
+        <p><strong>Convenção:</strong> novos fluxos reais devem preferir <code>tests/e2e/&lt;fluxo&gt;-real.spec.ts</code>. Os diretórios <code>crud/</code> contêm fluxos legados. Use <code>getByRole</code>, <code>getByLabel</code> e seletores existentes; regex ancorada como <code>/^CEP/</code> evita que “CEP” encontre também o botão “Buscar CEP”.</p>
+      </section>
+
+      <section id="novos-testes" aria-labelledby="h-new">
+        <h2 id="h-new">5. Como Criar Novos Testes</h2>
+        <ol class="step">
+          <li>Escolha um fluxo de integração real como padrão. Teste de UI isolado é uma exceção explícita, não uma substituição silenciosa da API.</li>
+          <li>Crie <code>tests/e2e/&lt;fluxo&gt;-real.spec.ts</code>.</li>
+          <li>Para specs na raiz de <code>tests/e2e/</code>, importe <code>{ test, expect }</code> de <code>./fixtures</code> e os helpers necessários de <code>./real-api-helpers</code>. Em <code>crud/</code>, o caminho relativo é <code>../fixtures</code>.</li>
+          <li>Faça login em <code>beforeEach</code>; crie pré-requisitos com helpers reais ou endpoints através de <code>page.request</code> e guarde IDs para cleanup.</li>
+          <li>Limpe dados criados em <code>afterEach</code>/<code>afterAll</code>, tratando 404 como tolerável apenas quando a operação é idempotente e o helper já define esse contrato.</li>
+          <li>Use seletores acessíveis, <code>expect</code> com espera explícita e dados únicos. Não use <code>waitForTimeout</code>.</li>
+          <li>Para validar rede, crie a promise de <code>page.waitForResponse</code> antes da ação que dispara a requisição e confirme método, caminho e status reais.</li>
+          <li>Execute o arquivo direcionado e, para diagnóstico visual, use <code>--headed</code> e <code>--trace on</code>.</li>
+        </ol>
+
+        <h3>Esqueleto: listar produtos reais</h3>
+        <p>Exemplo mínimo para arquivo novo na raiz de <code>tests/e2e/</code>. Reusa imports/funções existentes. Como essa leitura não cria recursos, não precisa de cleanup; o fixture de autenticação é aplicado por teste. Os specs atuais usam <code>beforeEach</code>/<code>afterEach</code> quando precisam de <code>page</code>, não <code>beforeAll</code>/<code>afterAll</code>.</p>
+        <div class="codebox">
+          <button class="copy" type="button" aria-label="Copiar esqueleto de spec" data-copy>Copiar</button>
+          <pre><code>import { expect, test } from './fixtures'
+import { listRealProducts } from './real-api-helpers'
+
+test.describe('Catálogo com API real', () =&gt; {
+  test.beforeEach(async ({ loginTenant4 }) =&gt; {
+    await loginTenant4()
+  })
+
+  test('lista produtos reais', async ({ page }) =&gt; {
+    const products = await listRealProducts(page)
+    expect(products.length).toBeGreaterThan(0)
+  })
+})</code></pre>
+        </div>
+        <p class="small muted">Se um teste criar cliente/endereço/pedido, acrescente estado de IDs e cleanup no hook de pós-teste conforme <code>clientes-real.spec.ts</code> ou <code>pedidos-real.spec.ts</code>. Não copie credenciais para um novo spec.</p>
+      </section>
+
+      <section id="boas-praticas" aria-labelledby="h-good">
+        <h2 id="h-good">6. Boas Práticas e Armadilhas</h2>
+        <ul>
+          <li>Não use <code>page.route</code>, MSW ou importações de <code>src/mocks/</code> em specs de integração real.</li>
+          <li>Não use <code>waitForTimeout</code>; prefira <code>await expect(locator)...</code> e espera de resposta com timeout padrão configurado pelo Playwright.</li>
+          <li>Evite labels parciais que colidem com nomes acessíveis de botões. Prefira <code>getByRole('textbox', { name: /^CEP/ })</code> ou um ID estável existente.</li>
+          <li>Gere valores únicos por execução. O helper já gera documentos válidos e números de endereço dinâmicos; CEP precisa permanecer com oito dígitos.</li>
+          <li>Registre <code>waitForResponse</code> antes do clique. Verifique <code>pathname</code> e método com o formato realmente chamado.</li>
+          <li>Faça cleanup por API no hook apropriado, inclusive quando o teste falhar. Só ignore códigos como 404 quando o contrato do cleanup permitir explicitamente.</li>
+          <li>Prefira setup via API real (mais rápido) e validação do comportamento principal via UI. Confirme persistência no servidor quando o caso exigir.</li>
+          <li>Os fluxos legados e os novos specs reais coexistem. Não classifique um spec como integração real apenas por estar em <code>tests/e2e/</code>; confira se existe interceptação.</li>
+        </ul>
+      </section>
+
+      <section id="divergencias" aria-labelledby="h-divergences">
+        <h2 id="h-divergences">7. Relatório de Divergências</h2>
+        <p>O <a href="../../RELATORIO_DIVERGENCIAS_E2E.md">relatório completo</a> registra seletores, contratos Front/Back, endpoints, riscos do banco e estratégias de setup/teardown. A tabela abaixo resume os pontos presentes no relatório consultado; “resolvida” pode significar correção no código ou ajuste local, não necessariamente mudança publicada em todo ambiente.</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Ponto documentado</th><th>Status indicado neste guia</th><th>Resumo</th></tr></thead>
+            <tbody>
+              <tr><td>Status do pedido não serializado pelo repositório</td><td><span class="status done">Resolvida</span></td><td>O repositório agora inclui <code>status</code> no payload e o teste verifica o status persistido.</td></tr>
+              <tr><td>CPF/CNPJ validados só por quantidade de dígitos no backend</td><td><span class="status open">Em aberto</span></td><td>O serviço não valida os dígitos verificadores; comprimentos corretos com checksum inválido podem ser aceitos.</td></tr>
+              <tr><td>Duplicidade de endereço pode retornar 409</td><td><span class="status open">Em aberto</span></td><td>O risco de duplicidade/constraint permanece; testes mitigam com dados únicos e DELETE real no cleanup.</td></tr>
+              <tr><td>Sequência PostgreSQL de endereço defasada</td><td><span class="status done">Resolvida localmente</span></td><td>Sequência do banco local foi sincronizada para o próximo código acima do maior existente. Outros bancos devem ser verificados se o sintoma retornar.</td></tr>
+              <tr><td>Detalhe de orçamento usa rota de pedido no Front</td><td><span class="status open">Em aberto</span></td><td>O OpenAPI oferece <code>GET /orcamentos/{id}</code>; o repositório usa <code>/pedidos/{id}</code> também para orçamento.</td></tr>
+              <tr><td>Preferências do cliente e observações não são enviadas integralmente</td><td><span class="status open">Em aberto</span></td><td>Preferências padrão e “Observações (usuário)” constam entre os campos ausentes no payload/mapeamento descrito no relatório.</td></tr>
+              <tr><td>Filtro local de pedidos cancelados</td><td><span class="status open">Em aberto</span></td><td>A API oculta cancelados por padrão; a consulta do Front não pede <code>incluir_cancelados=true</code>.</td></tr>
+              <tr><td>Estoque não rejeitado na inclusão de item</td><td><span class="status open">Em aberto</span></td><td>O relatório registra que o serviço não valida estoque na inclusão; não há expectativa de erro E2E inventada para esse cenário.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>O próprio relatório também registra a lacuna de testabilidade: <code>crud/cliente-enderecos.spec.ts</code> usa interceptações e deve ser considerado isolado/simulado, não evidência de integração com API real.</p>
+      </section>
+
+      <section id="resultado" aria-labelledby="h-result">
+        <h2 id="h-result">8. Resultado Atual</h2>
+        <p class="lead"><strong>17/17 testes aprovados na última execução completa registrada nesta sessão.</strong></p>
+        <p>A saída do Playwright reportou <code>17 passed (30.6s)</code>. A execução direcionada anterior também confirmou os três arquivos impactados: clientes reais 3/3, pedidos reais 2/2 e CRUD legado de pedido 1/1. O relatório de divergências na raiz contém o contexto da correção e os diagnósticos do trace.</p>
+        <p class="small muted">Data/hora registrada no contexto desta geração: 19/10/2026, aproximadamente 17:19 (UTC−03:00). Para novos resultados, rode a suíte e atualize este bloco a partir da saída efetiva do Playwright; os números não são atualizados automaticamente pelo HTML.</p>
+      </section>
+    </main>
+  </div>
+
+  <footer>
+    <p>Documento gerado automaticamente. Revise ao alterar <code>playwright.config.ts</code>, <code>fixtures.ts</code>, <code>real-api-helpers.ts</code> ou qualquer <code>*.spec.ts</code>.</p>
+    <p><a href="#top">Voltar ao topo ↑</a></p>
+  </footer>
+
+  <script>
+    document.querySelectorAll('[data-copy]').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const code = button.parentElement?.querySelector('code')?.innerText;
+        if (!code) return;
+        const originalText = button.textContent;
+        try {
+          await navigator.clipboard.writeText(code);
+          button.textContent = 'Copiado!';
+          button.setAttribute('aria-label', 'Copiado para a área de transferência');
+          window.setTimeout(() => {
+            button.textContent = originalText;
+            button.setAttribute('aria-label', 'Copiar bloco de código');
+          }, 1600);
+        } catch {
+          button.textContent = 'Falha ao copiar';
+          button.setAttribute('aria-label', 'Não foi possível copiar o bloco');
+        }
+      });
+    });
+  </script>
+</body>
+</html>
