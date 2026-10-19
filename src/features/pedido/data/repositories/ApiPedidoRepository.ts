@@ -431,6 +431,7 @@ export class ApiPedidoRepository implements PedidoRepository {
         const payload = {
             cliente_id: pedido.customerId,
             tipo: pedido.type,
+            status: pedido.status,
             numero_cliente: pedido.customerOrderNumber ?? '',
             data_entrega: toISODateTime(pedido.deliveryDate),
             valor_frete: Number(pedido.freightAmount) || 0,

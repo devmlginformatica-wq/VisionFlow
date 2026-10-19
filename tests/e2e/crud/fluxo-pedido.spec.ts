@@ -1,4 +1,5 @@
 import { test, expect } from '../fixtures'
+import { createAddressViaApi, deleteAddressViaApi } from '../real-api-helpers'
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null
@@ -44,6 +45,7 @@ test.describe.configure({ mode: 'serial' })
 test.describe('CRUD de pedido', () => {
   let pedidoId: number | null = null
   let clienteId: number | null = null
+  let enderecoId: number | null = null
   const pedidoIdsCriados: number[] = []
 
   test.afterEach(async ({ page }) => {
@@ -61,6 +63,9 @@ test.describe('CRUD de pedido', () => {
       }
 
       if (clienteId !== null) {
+        if (enderecoId !== null) {
+          await deleteAddressViaApi(page, clienteId, enderecoId)
+        }
         const response = await page.request.delete(`/clientes/${clienteId}`, {
           headers: { Authorization: `Bearer ${token}` },
         })
@@ -71,6 +76,7 @@ test.describe('CRUD de pedido', () => {
     pedidoId = null
     pedidoIdsCriados.length = 0
     clienteId = null
+    enderecoId = null
   })
 
   test('cria, lê, edita e deleta', async ({ page, loginTenant4 }) => {
@@ -91,12 +97,14 @@ test.describe('CRUD de pedido', () => {
       const createClientResponse = await createClientResponsePromise
       await assertResponseSucceeded(createClientResponse)
       clienteId = await getResponseId(createClientResponse)
+      enderecoId = await createAddressViaApi(page, clienteId)
       await expect(page).toHaveURL(/\/app\/clientes(?:\?.*)?$/)
     })
 
     await test.step('CREATE', async () => {
       await page.goto('/app/pedidos/novo')
       await page.getByLabel('Cliente').selectOption({ label: nomeCliente })
+      await expect(page.getByLabel('Endereço cobrança')).toHaveValue(String(enderecoId), { timeout: 10000 })
       await page.getByRole('tab', { name: 'Produtos' }).click()
       await page.getByRole('button', { name: 'Adicionar Produto' }).last().click()
 
