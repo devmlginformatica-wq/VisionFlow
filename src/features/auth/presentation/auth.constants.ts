@@ -1,5 +1,5 @@
 export const authStrings = {
-    title: 'Boas-vindas de volta',
+    title: 'Seja bem vindo(a) de volta!',
     description: 'Entre na sua conta para continuar.',
     emailLabel: 'E-mail',
     emailPlaceholder: 'voce@empresa.com.br',
