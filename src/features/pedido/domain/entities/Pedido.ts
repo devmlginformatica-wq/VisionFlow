@@ -18,6 +18,7 @@ export interface Pedido {
     number: string
     customerOrderNumber: string
     status: PedidoStatus
+    rejectionReason?: string | null
     issueDate: string
     deliveryDate: string
     companyId: number | null

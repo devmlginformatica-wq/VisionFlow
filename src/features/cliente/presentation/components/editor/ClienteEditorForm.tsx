@@ -12,15 +12,18 @@ interface ClienteEditorFormProps {
     catalogs: ClienteEditorCatalogs
     catalogsLoading: boolean
     titles: ClienteFormValues['titles']
-    onSubmit: (values: ClienteFormValues) => Promise<void>
+    locked: boolean
+    onSubmit: (values: ClienteFormValues, event?: React.BaseSyntheticEvent) => Promise<void>
     consultarCnpj: (taxId: string) => Promise<CnpjLookup>
     onAddressFound: (address: CnpjLookup['address']) => Promise<void>
 }
 
-export function ClienteEditorForm({ form, addresses, catalogs, catalogsLoading, titles, onSubmit, consultarCnpj, onAddressFound }: ClienteEditorFormProps): React.JSX.Element {
+export function ClienteEditorForm({ form, addresses, catalogs, catalogsLoading, titles, locked, onSubmit, consultarCnpj, onAddressFound }: ClienteEditorFormProps): React.JSX.Element {
     return (
         <form id="cliente-editor-form" onSubmit={form.handleSubmit(onSubmit)} noValidate>
-            <ClienteEditorTabs><ClienteEditorTabPanels form={form} enderecoViewModel={addresses} catalogs={catalogs} catalogsLoading={catalogsLoading} titulos={titles} consultarCnpj={consultarCnpj} onAddressFound={onAddressFound} /></ClienteEditorTabs>
+            <div inert={locked}>
+                <ClienteEditorTabs><ClienteEditorTabPanels form={form} enderecoViewModel={addresses} catalogs={catalogs} catalogsLoading={catalogsLoading} titulos={titles} consultarCnpj={consultarCnpj} onAddressFound={onAddressFound} /></ClienteEditorTabs>
+            </div>
         </form>
     )
 }

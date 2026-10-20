@@ -6,7 +6,7 @@ import type { ClienteRepository } from '../../domain/repositories/ClienteReposit
 
 interface ApiClienteRow {
     id: number
-    codigo_erp: string
+    codigo_erp: string | null
     nome_razao_social: string
     nome_fantasia: string | null
     cnpj_cpf: string | null
@@ -26,6 +26,8 @@ interface ApiClienteRow {
     cidade: string | null
     estado: string | null
     situacao_cadastro?: string | null
+    status_integracao?: string | null
+    motivo_rejeicao?: string | null
     situacao_compra?: string | null
     data_abertura?: string | null
     cor_indicador?: 'verde' | 'vermelho' | null
@@ -202,6 +204,8 @@ function mapClient(row: ApiClienteRow): Cliente {
         prospect: row.prospect ?? row.situacao_compra === 'sem_compra',
         status: row.ativo ? 'ativo' : 'inativo',
         registrationStatus: row.situacao_cadastro ?? '',
+        integrationStatus: row.status_integracao ?? 'em_digitacao',
+        rejectionReason: row.motivo_rejeicao ?? null,
         purchaseStatus: row.situacao_compra ?? '',
         openedAt: row.data_abertura ?? '',
         indicatorColor: row.cor_indicador ?? (row.ativo ? 'verde' : 'vermelho'),
@@ -214,7 +218,7 @@ function mapClient(row: ApiClienteRow): Cliente {
         paymentMethodId: row.forma_pagamento_padrao_id ?? null,
         priceTableId: row.tabela_preco_padrao_id ?? null,
         lastVisit: row.data_ultima_visita ?? '',
-        integrationId: row.codigo_erp,
+        integrationId: row.codigo_erp ?? '',
         creditLimit: row.limite_credito_total ?? 0,
         userNotes: row.anotacao_usuario ?? '',
         erpNotes: row.anotacao_erp ?? '',
@@ -315,6 +319,10 @@ export class ApiClienteRepository implements ClienteRepository {
 
     async delete(id: number): Promise<void> {
         await apiRequest<void>(`/clientes/${id}`, { method: 'DELETE' })
+    }
+
+    async finalize(id: number): Promise<void> {
+        await apiRequest(`/clientes/${id}/finalizar`, { method: 'POST' })
     }
 
     async lookupTaxId(taxId: string): Promise<CnpjLookup> {

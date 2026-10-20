@@ -109,7 +109,8 @@ test.describe('CRUD de pedido', () => {
       })
       await customerSearch.fill(nomeCliente)
       await page.getByRole('option', { name: nomeCliente, exact: true }).click()
-      await expect(page.getByLabel('Endereço cobrança')).toHaveValue(String(enderecoId), { timeout: 10000 })
+      await expect(page.getByRole('combobox', { name: 'Endereço cobrança' }))
+        .toContainText('Avenida E2E', { timeout: 10000 })
       await page.getByRole('tab', { name: 'Produtos' }).click()
       await page.getByRole('button', { name: 'Adicionar Produto' }).last().click()
 
@@ -143,35 +144,21 @@ test.describe('CRUD de pedido', () => {
       const customerOrderNumber = `E2E-${Date.now()}`
       const deliveryDate = '2026-11-15'
       const freightAmount = '51,23'
-      let deliveryAddressValue = ''
-      let collectionAddressValue = ''
+      let deliveryAddressLabel = ''
+      let collectionAddressLabel = ''
 
       await test.step('Atualiza os campos e verifica persistência após recarregar', async () => {
         await page.getByRole('tab', { name: 'Dados Gerais' }).click()
         await page.getByLabel('Data entrega').fill(deliveryDate)
         await page.getByLabel('Frete').fill(freightAmount)
 
-        const deliveryAddress = page.getByLabel('Endereço entrega')
-        const deliveryAddressOptions = await deliveryAddress.locator('option').evaluateAll((options) =>
-          options
-            .map((option) => option.getAttribute('value'))
-            .filter((value): value is string => Boolean(value)),
-        )
-        if (deliveryAddressOptions.length > 0) {
-          deliveryAddressValue = deliveryAddressOptions[0]
-          await deliveryAddress.selectOption(deliveryAddressValue)
-        }
+        const deliveryAddress = page.getByRole('combobox', { name: 'Endereço entrega' })
+        deliveryAddressLabel = (await deliveryAddress.innerText()).trim()
+        expect(deliveryAddressLabel).toContain('Avenida E2E')
 
-        const collectionAddress = page.getByLabel('Endereço cobrança')
-        const collectionAddressOptions = await collectionAddress.locator('option').evaluateAll((options) =>
-          options
-            .map((option) => option.getAttribute('value'))
-            .filter((value): value is string => Boolean(value)),
-        )
-        if (collectionAddressOptions.length > 0) {
-          collectionAddressValue = collectionAddressOptions[0]
-          await collectionAddress.selectOption(collectionAddressValue)
-        }
+        const collectionAddress = page.getByRole('combobox', { name: 'Endereço cobrança' })
+        collectionAddressLabel = (await collectionAddress.innerText()).trim()
+        expect(collectionAddressLabel).toContain('Avenida E2E')
 
         await page.getByRole('tab', { name: 'Finalização' }).click()
         await page.getByLabel('Nro pedido cliente').fill(customerOrderNumber)
@@ -193,8 +180,8 @@ test.describe('CRUD de pedido', () => {
         await page.getByRole('tab', { name: 'Dados Gerais' }).click()
         await expect(page.getByLabel('Data entrega')).toHaveValue(deliveryDate)
         await expect(page.getByLabel('Frete')).toHaveValue(freightAmount)
-        await expect(page.getByLabel('Endereço entrega')).toHaveValue(deliveryAddressValue)
-        await expect(page.getByLabel('Endereço cobrança')).toHaveValue(collectionAddressValue)
+        await expect(page.getByRole('combobox', { name: 'Endereço entrega' })).toHaveText(deliveryAddressLabel)
+        await expect(page.getByRole('combobox', { name: 'Endereço cobrança' })).toHaveText(collectionAddressLabel)
         await page.getByRole('tab', { name: 'Finalização' }).click()
         await expect(page.getByLabel('Nro pedido cliente')).toHaveValue(customerOrderNumber)
         await expect(page.getByLabel('Observações', { exact: true })).toHaveValue(observacaoEditada)

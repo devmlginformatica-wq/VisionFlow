@@ -16,12 +16,14 @@ interface PedidoEditorFormProps {
 export function PedidoEditorForm({ form, viewModel, type, onSubmit }: PedidoEditorFormProps): React.JSX.Element {
     return (
         <form id="pedido-editor-form" onSubmit={form.handleSubmit(onSubmit)} noValidate>
-            <input type="hidden" {...form.register('type')} value={type} />
-            <input type="hidden" {...form.register('number')} />
-            <input type="hidden" {...form.register('status')} />
-            <input type="hidden" {...form.register('customerName')} />
-            <input type="hidden" {...form.register('customerTaxId')} />
-            <PedidoEditorTabs data={<AbaDadosGerais form={form} viewModel={viewModel} />} products={<AbaProdutos viewModel={viewModel} />} completion={<AbaFinalizacao form={form} viewModel={viewModel} />} />
+            <div inert={viewModel.locked}>
+                <input type="hidden" {...form.register('type')} value={type} />
+                <input type="hidden" {...form.register('number')} />
+                <input type="hidden" {...form.register('status')} />
+                <input type="hidden" {...form.register('customerName')} />
+                <input type="hidden" {...form.register('customerTaxId')} />
+                <PedidoEditorTabs data={<AbaDadosGerais form={form} viewModel={viewModel} />} products={<AbaProdutos viewModel={viewModel} />} completion={<AbaFinalizacao form={form} viewModel={viewModel} />} />
+            </div>
         </form>
     )
 }

@@ -13,6 +13,7 @@ interface ApiPedidoRow {
     data_emissao: string
     total_liquido: number
     status: string
+    motivo_rejeicao?: string | null
 }
 
 interface ApiPedidoPage {
@@ -109,6 +110,7 @@ interface ApiPedidoDetalhe {
     numero: string
     numero_cliente?: string
     status: string
+    motivo_rejeicao?: string | null
     data_emissao: string
     data_entrega?: string
     empresa?: { id: number; nome: string } | null
@@ -186,7 +188,14 @@ function toISODateTime(date: string | null | undefined): string | null {
 }
 
 function normalizePedidoStatus(status: string): Pedido['status'] {
-    if (status === 'aguardando_aprovacao' || status === 'aprovado' || status === 'cancelado') {
+    if (
+        status === 'em_integracao'
+        || status === 'integrado'
+        || status === 'erro_integracao'
+        || status === 'aguardando_aprovacao'
+        || status === 'aprovado'
+        || status === 'cancelado'
+    ) {
         return status
     }
     return 'em_digitacao'
@@ -366,6 +375,7 @@ export class ApiPedidoRepository implements PedidoRepository {
                 number: response.numero,
                 customerOrderNumber: response.numero_cliente ?? '',
                 status: normalizePedidoStatus(response.status),
+                rejectionReason: response.motivo_rejeicao ?? null,
                 issueDate: response.data_emissao,
                 deliveryDate: response.data_entrega ?? '',
                 companyId: response.empresa?.id ?? null,
@@ -472,6 +482,7 @@ export class ApiPedidoRepository implements PedidoRepository {
             id: response.id,
             number: response.numero,
             status: normalizePedidoStatus(response.status),
+            rejectionReason: response.motivo_rejeicao ?? null,
             issueDate: response.data_emissao,
             deliveryDate: response.data_entrega ?? '',
             customerOrderNumber: response.numero_cliente ?? '',
@@ -498,6 +509,11 @@ export class ApiPedidoRepository implements PedidoRepository {
 
     async delete(id: number): Promise<void> {
         await apiRequest<void>(`/pedidos/${id}`, { method: 'DELETE' })
+    }
+
+    async finalize(id: number, type: PedidoTipo): Promise<void> {
+        const path = type === PedidoTypeEnum.Orcamento ? `/orcamentos/${id}` : `/pedidos/${id}`
+        await apiRequest(path + '/finalizar', { method: 'POST' })
     }
 
     async getCustomerAddresses(customerId: number): Promise<Endereco[]> {

@@ -5,6 +5,7 @@ import { shellRoutes } from '../../../../../core/shell/shell.constants'
 import { clienteStrings } from '../../cliente.constants'
 
 interface ClienteEditorActionsMenuProps {
+    disabled?: boolean
     onDelete: () => void
 }
 
@@ -17,10 +18,10 @@ const actions = [
     { label: 'Ver tarefas', path: shellRoutes.tasks },
 ]
 
-export function ClienteEditorActionsMenu({ onDelete }: ClienteEditorActionsMenuProps): React.JSX.Element {
+export function ClienteEditorActionsMenu({ disabled = false, onDelete }: ClienteEditorActionsMenuProps): React.JSX.Element {
     return (
         <Dialog.Root>
-            <Dialog.Trigger asChild><button type="button" aria-label={clienteStrings.actions} className="flex size-10 items-center justify-center rounded-md border border-[var(--color-border)] hover:bg-[var(--color-canvas)]"><MoreVertical size={18} /></button></Dialog.Trigger>
+            <Dialog.Trigger asChild><button type="button" disabled={disabled} aria-label={clienteStrings.actions} className="flex size-10 items-center justify-center rounded-md border border-[var(--color-border)] hover:bg-[var(--color-canvas)] disabled:opacity-60"><MoreVertical size={18} /></button></Dialog.Trigger>
             <Dialog.Portal>
                 <Dialog.Overlay className="fixed inset-0 z-40 bg-[var(--color-overlay)]" />
                 <Dialog.Content className="fixed inset-x-0 bottom-0 z-50 rounded-t-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5 text-[var(--color-foreground)] shadow-xl md:inset-auto md:left-1/2 md:top-1/2 md:w-[min(26rem,calc(100vw-2rem))] md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-md">

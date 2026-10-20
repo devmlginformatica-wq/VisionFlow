@@ -20,6 +20,9 @@ function formatIssueDate(value: string): string {
 }
 
 function getStatusLabel(status: Pedido['status']): string {
+    if (status === 'em_integracao') return pedidoStrings.integrationPending
+    if (status === 'erro_integracao') return pedidoStrings.integrationError
+    if (status === 'integrado') return pedidoStrings.integrated
     if (status === 'aguardando_aprovacao') return pedidoStrings.approval
     if (status === 'aprovado') return pedidoStrings.approved
     if (status === 'cancelado') return pedidoStrings.cancelled

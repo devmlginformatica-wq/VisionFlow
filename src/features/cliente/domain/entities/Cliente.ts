@@ -19,6 +19,8 @@ export interface Cliente {
     prospect: boolean
     status: string
     registrationStatus: string
+    integrationStatus?: 'em_digitacao' | 'em_integracao' | 'integrado' | 'erro_integracao' | string
+    rejectionReason?: string | null
     purchaseStatus: string
     openedAt: string
     indicatorColor: 'verde' | 'vermelho'

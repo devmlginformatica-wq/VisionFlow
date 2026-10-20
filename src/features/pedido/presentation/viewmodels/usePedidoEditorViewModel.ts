@@ -45,6 +45,7 @@ export interface PedidoEditorViewModel {
     catalogs: PedidoEditorCatalogs
     loading: boolean
     saving: boolean
+    locked: boolean
     error: string | null
     productSearchError: string | null
     isSearchingClients: boolean
@@ -348,13 +349,22 @@ export function usePedidoEditorViewModel(type: PedidoTipo, orderId: number | nul
     function recalcularTotais(items = pedido.items, freightAmount = pedido.freightAmount): void { recalculate(items, freightAmount) }
 
     async function salvar(values: PedidoFormValues, finalize = false): Promise<void> {
+        if (pedido.status === 'em_integracao' || pedido.status === 'integrado') return
         setSaving(true)
         setError(null)
         try {
-            const nextStatus = finalize && type === PedidoTipo.Pedido ? 'aguardando_aprovacao' : values.status
-            const saved = await pedidoRepository.save({ ...pedido, ...values, id: pedido.id, status: nextStatus, items: pedido.items, totals: calcularPedidoTotais(pedido.items, values.freightAmount) })
-            setPedido(saved)
-            navigate(`${getOrderBasePath(type)}${location.search}`, { replace: true })
+            const saved = await pedidoRepository.save({ ...pedido, ...values, id: pedido.id, status: pedido.status, items: pedido.items, totals: calcularPedidoTotais(pedido.items, values.freightAmount) })
+            if (finalize) {
+                if (saved.id === null) throw new Error('A API não retornou o identificador do cadastro.')
+                await pedidoRepository.finalize(saved.id, type)
+                setPedido({ ...saved, status: 'em_integracao', rejectionReason: null })
+                if (orderId === null) {
+                    navigate(`${getOrderBasePath(type)}/${saved.id}${location.search}`, { replace: true })
+                }
+            } else {
+                setPedido(saved)
+                navigate(`${getOrderBasePath(type)}${location.search}`, { replace: true })
+            }
         } catch (saveError: unknown) {
             logger.error('Não foi possível salvar o pedido.', saveError)
             setError(saveError instanceof Error ? saveError.message : pedidoStrings.saveFailed)
@@ -366,5 +376,6 @@ export function usePedidoEditorViewModel(type: PedidoTipo, orderId: number | nul
     function cancelar(): void { navigate(-1) }
     function retry(): void { setError(null); setLoading(true); setReloadKey((key) => key + 1) }
 
-    return { pedido, itens: pedido.items, totais: pedido.totals, addresses, catalogs, loading, saving, error, productSearchError, isSearchingClients, isSearchingProducts, searchClients, searchProducts, setCustomer, adicionarItem, atualizarItem, removerItem, recalcularTotais, salvar, cancelar, retry }
+    const locked = pedido.status === 'em_integracao' || pedido.status === 'integrado'
+    return { pedido, itens: pedido.items, totais: pedido.totals, addresses, catalogs, loading, saving, locked, error, productSearchError, isSearchingClients, isSearchingProducts, searchClients, searchProducts, setCustomer, adicionarItem, atualizarItem, removerItem, recalcularTotais, salvar, cancelar, retry }
 }

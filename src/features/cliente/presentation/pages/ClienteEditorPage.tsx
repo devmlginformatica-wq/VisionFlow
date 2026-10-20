@@ -27,17 +27,23 @@ export function ClienteEditorPage(): React.JSX.Element {
         }
     }, [clientId, reset, viewModel.cliente, viewModel.loading])
 
-    async function submit(values: ClienteFormValues): Promise<void> {
-        await viewModel.salvar({ ...values, addresses: enderecoViewModel.enderecos, titles: viewModel.cliente.titles })
+    async function submit(values: ClienteFormValues, event?: React.BaseSyntheticEvent): Promise<void> {
+        const nativeEvent = event?.nativeEvent
+        const submitter = nativeEvent instanceof SubmitEvent ? nativeEvent.submitter : null
+        const finalize = submitter instanceof HTMLButtonElement && submitter.dataset.finalize === 'true'
+        await viewModel.salvar({ ...values, addresses: enderecoViewModel.enderecos, titles: viewModel.cliente.titles }, finalize)
     }
 
     const loading = viewModel.loading
 
     return (
         <section className="mx-auto w-full max-w-5xl space-y-5 pb-20">
-            <ClienteEditorHeader clientId={clientId} saving={viewModel.saving} onCancel={viewModel.cancelar} onDelete={() => void viewModel.excluir()} />
+            <ClienteEditorHeader clientId={clientId} saving={viewModel.saving} locked={viewModel.locked} onCancel={viewModel.cancelar} onDelete={() => void viewModel.excluir()} />
             {viewModel.error && <VfError message={viewModel.error} retryLabel={clienteStrings.tryAgain} onRetry={viewModel.retry} />}
-            {loading ? <ClienteEditorSkeleton /> : <ClienteEditorForm form={form} addresses={enderecoViewModel} catalogs={viewModel.catalogs} catalogsLoading={viewModel.catalogsLoading} titles={viewModel.cliente.titles} onSubmit={submit} consultarCnpj={viewModel.consultarCnpj} onAddressFound={enderecoViewModel.adicionarConsultaCnpj} />}
+            {!loading && viewModel.cliente.integrationStatus === 'em_integracao' && <p role="status" className="rounded-md border border-blue-200 bg-blue-50 p-3 text-sm text-blue-900">{clienteStrings.awaitingIntegration}</p>}
+            {!loading && viewModel.cliente.integrationStatus === 'integrado' && <p role="status" className="rounded-md border border-green-200 bg-green-50 p-3 text-sm text-green-900">{clienteStrings.integrationSucceeded}</p>}
+            {!loading && viewModel.cliente.integrationStatus === 'erro_integracao' && <p role="alert" className="rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-900">{clienteStrings.integrationFailed}{viewModel.cliente.rejectionReason ? ` ${viewModel.cliente.rejectionReason}` : ''}</p>}
+            {loading ? <ClienteEditorSkeleton /> : <ClienteEditorForm form={form} addresses={enderecoViewModel} catalogs={viewModel.catalogs} catalogsLoading={viewModel.catalogsLoading} titles={viewModel.cliente.titles} locked={viewModel.locked} onSubmit={submit} consultarCnpj={viewModel.consultarCnpj} onAddressFound={enderecoViewModel.adicionarConsultaCnpj} />}
         </section>
     )
 }

@@ -41,9 +41,10 @@ export interface ClienteEditorViewModel {
     catalogsLoading: boolean
     loading: boolean
     saving: boolean
+    locked: boolean
     error: string | null
     consultarCnpj: (taxId: string) => Promise<CnpjLookup>
-    salvar: (values: ClienteFormValues) => Promise<void>
+    salvar: (values: ClienteFormValues, finalize?: boolean) => Promise<void>
     excluir: () => Promise<void>
     cancelar: () => void
     retry: () => void
@@ -113,7 +114,8 @@ export function useClienteEditorViewModel(clientId: number | null): ClienteEdito
         return clienteRepository.lookupTaxId(taxId)
     }
 
-    async function salvar(values: ClienteFormValues): Promise<void> {
+    async function salvar(values: ClienteFormValues, finalize = false): Promise<void> {
+        if (cliente.integrationStatus === 'em_integracao' || cliente.integrationStatus === 'integrado') return
         setSaving(true)
         setError(null)
         try {
@@ -121,8 +123,16 @@ export function useClienteEditorViewModel(clientId: number | null): ClienteEdito
                 ...values,
                 legalName: values.legalName || values.name,
             })
-            setCliente(saved)
-            navigate(`${clienteRoutes.list}${location.search}`, { replace: true })
+            if (finalize) {
+                if (saved.id === null) throw new Error('A API não retornou o identificador do cliente.')
+                await clienteRepository.finalize(saved.id)
+                const finalized = { ...saved, integrationStatus: 'em_integracao' as const, rejectionReason: null }
+                setCliente(finalized)
+                if (clientId === null) navigate(clienteRoutes.edit(saved.id) + location.search, { replace: true })
+            } else {
+                setCliente(saved)
+                navigate(`${clienteRoutes.list}${location.search}`, { replace: true })
+            }
         } catch (saveError: unknown) {
             logger.error('Não foi possível salvar o cliente.', saveError)
             setError(saveError instanceof Error ? saveError.message : 'Não foi possível salvar o cliente.')
@@ -154,5 +164,6 @@ export function useClienteEditorViewModel(clientId: number | null): ClienteEdito
         setReloadKey((key) => key + 1)
     }
 
-    return { cliente, catalogs, catalogsLoading, loading, saving, error, consultarCnpj, salvar, excluir, cancelar, retry }
+    const locked = cliente.integrationStatus === 'em_integracao' || cliente.integrationStatus === 'integrado'
+    return { cliente, catalogs, catalogsLoading, loading, saving, locked, error, consultarCnpj, salvar, excluir, cancelar, retry }
 }
