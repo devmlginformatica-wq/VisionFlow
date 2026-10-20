@@ -1,9 +1,13 @@
-import type { UseFormRegister } from 'react-hook-form'
+import { Controller } from 'react-hook-form'
+import type { Control, UseFormRegister } from 'react-hook-form'
+import { SearchableSelect } from '../../../../../core/components/SearchableSelect'
+import type { SearchableSelectOption } from '../../../../../core/components/SearchableSelect'
 import type { ClienteFormValues } from '../../../domain/validators/clienteSchema'
 import { clienteStrings } from '../../cliente.constants'
 import type { ClienteEditorCatalogs } from '../../viewmodels/useClienteEditorViewModel'
 
 interface AbaPadroesProps {
+    control: Control<ClienteFormValues>
     register: UseFormRegister<ClienteFormValues>
     catalogs: ClienteEditorCatalogs
     catalogsLoading: boolean
@@ -12,37 +16,49 @@ interface AbaPadroesProps {
 interface ClienteSelectFieldProps {
     name: 'carrierId' | 'paymentConditionId' | 'paymentMethodId' | 'priceTableId'
     label: string
-    register: UseFormRegister<ClienteFormValues>
-    options: ReadonlyArray<{ id: number; label: string }>
+    control: Control<ClienteFormValues>
+    options: readonly SearchableSelectOption[]
     disabled: boolean
 }
 
-function ClienteSelectField({ name, label, register, options, disabled }: ClienteSelectFieldProps): React.JSX.Element {
+function ClienteSelectField({ name, label, control, options, disabled }: ClienteSelectFieldProps): React.JSX.Element {
     return (
         <div className="grid gap-1.5 md:grid-cols-[minmax(9rem,0.75fr)_minmax(0,1.5fr)] md:items-center">
             <label htmlFor={name} className="text-sm font-medium">{label}</label>
-            <select disabled={disabled} {...register(name, { setValueAs: (value: string) => value ? Number(value) : null })} id={name} className="h-10 rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-sm disabled:opacity-60">
-                <option value="">Selecione</option>{options.map((option) => <option key={option.id} value={option.id}>{option.label}</option>)}
-            </select>
+            <Controller
+                control={control}
+                name={name}
+                render={({ field }) => (
+                    <SearchableSelect
+                        id={name}
+                        value={field.value === null ? '' : String(field.value)}
+                        onValueChange={(value) => field.onChange(value ? Number(value) : null)}
+                        options={options}
+                        disabled={disabled}
+                        onBlur={field.onBlur}
+                        triggerRef={field.ref}
+                    />
+                )}
+            />
         </div>
     )
 }
 
-export function AbaPadroes({ register, catalogs, catalogsLoading }: AbaPadroesProps): React.JSX.Element {
+export function AbaPadroes({ control, register, catalogs, catalogsLoading }: AbaPadroesProps): React.JSX.Element {
     const disabled = catalogsLoading
-    const carrierOptions = catalogs.carriers.map((item) => ({ id: item.id, label: item.nome }))
-    const conditionOptions = catalogs.paymentConditions.map((item) => ({ id: item.id, label: item.descricao }))
-    const methodOptions = catalogs.paymentMethods.map((item) => ({ id: item.id, label: item.descricao }))
-    const tableOptions = catalogs.priceTables.map((item) => ({ id: item.id, label: item.nome }))
+    const carrierOptions = [{ value: '', label: 'Selecione' }, ...catalogs.carriers.map((item) => ({ value: String(item.id), label: item.nome }))]
+    const conditionOptions = [{ value: '', label: 'Selecione' }, ...catalogs.paymentConditions.map((item) => ({ value: String(item.id), label: item.descricao }))]
+    const methodOptions = [{ value: '', label: 'Selecione' }, ...catalogs.paymentMethods.map((item) => ({ value: String(item.id), label: item.descricao }))]
+    const tableOptions = [{ value: '', label: 'Selecione' }, ...catalogs.priceTables.map((item) => ({ value: String(item.id), label: item.nome }))]
 
     return (
         <div className="space-y-4">
             {catalogsLoading && <p role="status" className="text-sm text-[var(--color-muted)]">{clienteStrings.loadingDefaults}</p>}
             <p className="text-sm text-[var(--color-muted)]">{clienteStrings.defaultsPersisted}</p>
-            <ClienteSelectField name="carrierId" label={clienteStrings.carrier} register={register} options={carrierOptions} disabled={disabled} />
-            <ClienteSelectField name="paymentConditionId" label={clienteStrings.paymentCondition} register={register} options={conditionOptions} disabled={disabled} />
-            <ClienteSelectField name="paymentMethodId" label={clienteStrings.paymentMethod} register={register} options={methodOptions} disabled={disabled} />
-            <ClienteSelectField name="priceTableId" label={clienteStrings.priceTable} register={register} options={tableOptions} disabled={disabled} />
+            <ClienteSelectField name="carrierId" label={clienteStrings.carrier} control={control} options={carrierOptions} disabled={disabled} />
+            <ClienteSelectField name="paymentConditionId" label={clienteStrings.paymentCondition} control={control} options={conditionOptions} disabled={disabled} />
+            <ClienteSelectField name="paymentMethodId" label={clienteStrings.paymentMethod} control={control} options={methodOptions} disabled={disabled} />
+            <ClienteSelectField name="priceTableId" label={clienteStrings.priceTable} control={control} options={tableOptions} disabled={disabled} />
             <div className="grid gap-1.5 md:grid-cols-[minmax(9rem,0.75fr)_minmax(0,1.5fr)] md:items-center"><label htmlFor="lastVisit" className="text-sm font-medium">{clienteStrings.lastVisit}</label><input {...register('lastVisit')} id="lastVisit" type="date" className="h-10 rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-sm" /></div>
             <div className="grid gap-1.5 md:grid-cols-[minmax(9rem,0.75fr)_minmax(0,1.5fr)] md:items-center"><label htmlFor="integrationId" className="text-sm font-medium">{clienteStrings.integrationId}</label><input {...register('integrationId')} id="integrationId" readOnly className="h-10 rounded-md border border-[var(--color-border)] bg-[var(--color-canvas)] px-3 text-sm" /></div>
         </div>

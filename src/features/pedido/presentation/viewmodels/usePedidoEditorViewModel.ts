@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import logger from 'loglevel'
 import { ApiClienteRepository } from '../../../cliente/data/repositories/ApiClienteRepository'
+import type { Cliente } from '../../../cliente/domain/entities/Cliente'
 import { ApiPedidoRepository } from '../../data/repositories/ApiPedidoRepository'
 import type { ItemPedido } from '../../domain/entities/ItemPedido'
 import type { Pedido } from '../../domain/entities/Pedido'
@@ -13,9 +14,22 @@ import { getOrderBasePath, pedidoStrings } from '../pedido.constants'
 const pedidoRepository = new ApiPedidoRepository()
 const clienteRepository = new ApiClienteRepository()
 
+type PedidoEditorClient = { id: number; nome: string; razaoSocial: string; nomeFantasia: string; codigo: string; cpf_cnpj: string }
+
+function mapPedidoEditorClients(clients: Cliente[]): PedidoEditorClient[] {
+    return clients.flatMap((client) => client.id === null ? [] : [{
+        id: client.id,
+        nome: client.name,
+        razaoSocial: client.legalName,
+        nomeFantasia: client.tradeName,
+        codigo: client.integrationId,
+        cpf_cnpj: client.taxId,
+    }])
+}
+
 type PedidoEditorCatalogs = {
     companies: Awaited<ReturnType<ApiPedidoRepository['listCompanies']>>
-    clients: Array<{ id: number; nome: string; cpf_cnpj: string }>
+    clients: PedidoEditorClient[]
     paymentConditions: Awaited<ReturnType<ApiPedidoRepository['listPaymentConditions']>>
     paymentMethods: Awaited<ReturnType<ApiPedidoRepository['listPaymentMethods']>>
     carriers: Awaited<ReturnType<ApiPedidoRepository['listCarriers']>>
@@ -32,6 +46,11 @@ export interface PedidoEditorViewModel {
     loading: boolean
     saving: boolean
     error: string | null
+    productSearchError: string | null
+    isSearchingClients: boolean
+    isSearchingProducts: boolean
+    searchClients: (query: string) => Promise<void>
+    searchProducts: (query: string) => Promise<void>
     setCustomer: (customerId: number | null) => Promise<PedidoEditorViewModel['addresses']>
     adicionarItem: (item: ItemPedido) => void
     atualizarItem: (item: ItemPedido) => void
@@ -59,23 +78,39 @@ export function usePedidoEditorViewModel(type: PedidoTipo, orderId: number | nul
     const [loading, setLoading] = useState(orderId !== null)
     const [saving, setSaving] = useState(false)
     const [error, setError] = useState<string | null>(null)
+    const [productSearchError, setProductSearchError] = useState<string | null>(null)
     const [reloadKey, setReloadKey] = useState(0)
+    const [isSearchingClients, setIsSearchingClients] = useState(false)
+    const [isSearchingProducts, setIsSearchingProducts] = useState(false)
+    const initialClients = useRef<PedidoEditorClient[]>([])
+    const initialProducts = useRef<PedidoEditorViewModel['catalogs']['products']>([])
+    const currentClients = useRef<PedidoEditorClient[]>([])
+    const clientSearchGeneration = useRef(0)
+    const productSearchGeneration = useRef(0)
+    const activeClientQuery = useRef('')
+    const activeProductQuery = useRef('')
+    const selectedClientId = useRef<number | null>(pedido.customerId)
+
+    useEffect(() => {
+        selectedClientId.current = pedido.customerId
+    }, [pedido.customerId])
+
+    useEffect(() => {
+        currentClients.current = catalogs.clients
+    }, [catalogs.clients])
 
     useEffect(() => {
         let active = true
 
         async function loadClients(): Promise<void> {
             try {
-                const clients = await clienteRepository.list()
+                const clients = await clienteRepository.list({ limit: 50 })
                 if (!active) return
-                setCatalogs((current) => ({
-                    ...current,
-                    clients: clients.flatMap((client) => client.id === null ? [] : [{
-                        id: client.id,
-                        nome: client.name,
-                        cpf_cnpj: client.taxId,
-                    }]),
-                }))
+                initialClients.current = mapPedidoEditorClients(clients)
+                if (!activeClientQuery.current) {
+                    currentClients.current = initialClients.current
+                    setCatalogs((current) => ({ ...current, clients: initialClients.current }))
+                }
             } catch (loadError: unknown) {
                 logger.error('Não foi possível carregar os clientes do pedido.', loadError)
                 if (active) setError(loadError instanceof Error ? loadError.message : pedidoStrings.loadFailed)
@@ -84,6 +119,36 @@ export function usePedidoEditorViewModel(type: PedidoTipo, orderId: number | nul
 
         void loadClients()
         return () => { active = false }
+    }, [])
+
+    const searchClients = useCallback(async (query: string): Promise<void> => {
+        const generation = ++clientSearchGeneration.current
+        const normalizedQuery = query.trim()
+        activeClientQuery.current = normalizedQuery
+        setIsSearchingClients(normalizedQuery.length > 0)
+
+        try {
+            const clients = normalizedQuery
+                ? mapPedidoEditorClients(await clienteRepository.list({ busca: normalizedQuery, limit: 50 }))
+                : initialClients.current
+            if (generation !== clientSearchGeneration.current) return
+
+            const selectedId = selectedClientId.current
+            const selectedClient = currentClients.current.find((client) => client.id === selectedId)
+                ?? initialClients.current.find((client) => client.id === selectedId)
+            const nextClients = selectedClient && !clients.some((client) => client.id === selectedId)
+                ? [selectedClient, ...clients]
+                : clients
+            currentClients.current = nextClients
+            setCatalogs((current) => ({ ...current, clients: nextClients }))
+        } catch (loadError: unknown) {
+            if (generation !== clientSearchGeneration.current) return
+            logger.error('Não foi possível pesquisar clientes para o pedido.', loadError)
+            setError(loadError instanceof Error ? loadError.message : pedidoStrings.loadFailed)
+            throw loadError
+        } finally {
+            if (generation === clientSearchGeneration.current) setIsSearchingClients(false)
+        }
     }, [])
 
     useEffect(() => {
@@ -180,8 +245,11 @@ export function usePedidoEditorViewModel(type: PedidoTipo, orderId: number | nul
 
         async function loadProducts(): Promise<void> {
             try {
-                const products = await pedidoRepository.listProducts()
-                if (active) setCatalogs((current) => ({ ...current, products }))
+                const products = await pedidoRepository.listProducts({ limit: 50 })
+                if (active) {
+                    initialProducts.current = products
+                    if (!activeProductQuery.current) setCatalogs((current) => ({ ...current, products }))
+                }
             } catch (loadError: unknown) {
                 logger.error('Não foi possível carregar os produtos do pedido.', loadError)
                 if (active) setError(loadError instanceof Error ? loadError.message : pedidoStrings.loadFailed)
@@ -190,6 +258,28 @@ export function usePedidoEditorViewModel(type: PedidoTipo, orderId: number | nul
 
         void loadProducts()
         return () => { active = false }
+    }, [])
+
+    const searchProducts = useCallback(async (query: string): Promise<void> => {
+        const generation = ++productSearchGeneration.current
+        const normalizedQuery = query.trim()
+        activeProductQuery.current = normalizedQuery
+        setIsSearchingProducts(normalizedQuery.length > 0)
+        setProductSearchError(null)
+
+        try {
+            const products = normalizedQuery
+                ? await pedidoRepository.listProducts({ busca: normalizedQuery, limit: 50 })
+                : initialProducts.current
+            if (generation !== productSearchGeneration.current) return
+            setCatalogs((current) => ({ ...current, products }))
+        } catch (loadError: unknown) {
+            if (generation !== productSearchGeneration.current) return
+            logger.error('Não foi possível pesquisar produtos para o pedido.', loadError)
+            setProductSearchError(loadError instanceof Error ? loadError.message : pedidoStrings.loadFailed)
+        } finally {
+            if (generation === productSearchGeneration.current) setIsSearchingProducts(false)
+        }
     }, [])
 
     useEffect(() => {
@@ -205,7 +295,26 @@ export function usePedidoEditorViewModel(type: PedidoTipo, orderId: number | nul
                 }
                 setPedido(loadedOrder)
                 if (loadedOrder.customerId !== null) {
-                    setAddresses(await pedidoRepository.getCustomerAddresses(loadedOrder.customerId))
+                    const [customer, customerAddresses] = await Promise.all([
+                        clienteRepository.getById(loadedOrder.customerId),
+                        pedidoRepository.getCustomerAddresses(loadedOrder.customerId),
+                    ])
+                    if (!active) return
+                    if (customer) {
+                        const selectedClient = mapPedidoEditorClients([customer])[0]
+                        if (selectedClient) {
+                            initialClients.current = [
+                                selectedClient,
+                                ...initialClients.current.filter((client) => client.id !== selectedClient.id),
+                            ]
+                            const nextClients = currentClients.current.some((client) => client.id === selectedClient.id)
+                                ? currentClients.current
+                                : [selectedClient, ...currentClients.current]
+                            currentClients.current = nextClients
+                            setCatalogs((current) => ({ ...current, clients: nextClients }))
+                        }
+                    }
+                    setAddresses(customerAddresses)
                 }
             } catch (loadError: unknown) {
                 logger.error('Não foi possível carregar o pedido.', loadError)
@@ -257,5 +366,5 @@ export function usePedidoEditorViewModel(type: PedidoTipo, orderId: number | nul
     function cancelar(): void { navigate(-1) }
     function retry(): void { setError(null); setLoading(true); setReloadKey((key) => key + 1) }
 
-    return { pedido, itens: pedido.items, totais: pedido.totals, addresses, catalogs, loading, saving, error, setCustomer, adicionarItem, atualizarItem, removerItem, recalcularTotais, salvar, cancelar, retry }
+    return { pedido, itens: pedido.items, totais: pedido.totals, addresses, catalogs, loading, saving, error, productSearchError, isSearchingClients, isSearchingProducts, searchClients, searchProducts, setCustomer, adicionarItem, atualizarItem, removerItem, recalcularTotais, salvar, cancelar, retry }
 }

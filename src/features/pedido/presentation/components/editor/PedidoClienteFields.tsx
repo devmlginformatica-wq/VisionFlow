@@ -37,15 +37,14 @@ export function PedidoClienteFields({
                 onChange={(value) =>
                     setValue('companyId', optionId(value))
                 }
-            >
-                <option value="">Selecione</option>
-
-                {viewModel.catalogs.companies.map((company) => (
-                    <option key={company.id} value={company.id}>
-                        {company.nome}
-                    </option>
-                ))}
-            </PedidoSelectField>
+                options={[
+                    { value: '', label: 'Selecione' },
+                    ...viewModel.catalogs.companies.map((company) => ({
+                        value: String(company.id),
+                        label: company.nome,
+                    })),
+                ]}
+            />
 
             {/* Cliente */}
             <PedidoCustomerSelect
@@ -53,6 +52,8 @@ export function PedidoClienteFields({
                 catalogs={viewModel.catalogs}
                 setValue={setValue}
                 setCustomer={viewModel.setCustomer}
+                searchClients={viewModel.searchClients}
+                isSearchingClients={viewModel.isSearchingClients}
             />
 
             {/* Data de emissão */}
@@ -82,15 +83,14 @@ export function PedidoClienteFields({
                     onChange={(value) =>
                         setValue('paymentConditionId', optionId(value))
                     }
-                >
-                    <option value="">Selecione</option>
-
-                    {viewModel.catalogs.paymentConditions.map((entry) => (
-                        <option key={entry.id} value={entry.id}>
-                            {entry.descricao}
-                        </option>
-                    ))}
-                </PedidoSelectField>
+                    options={[
+                        { value: '', label: 'Selecione' },
+                        ...viewModel.catalogs.paymentConditions.map((entry) => ({
+                            value: String(entry.id),
+                            label: entry.descricao,
+                        })),
+                    ]}
+                />
 
                 <PedidoSelectField
                     id="pedido-method"
@@ -99,15 +99,14 @@ export function PedidoClienteFields({
                     onChange={(value) =>
                         setValue('paymentMethodId', optionId(value))
                     }
-                >
-                    <option value="">Selecione</option>
-
-                    {viewModel.catalogs.paymentMethods.map((entry) => (
-                        <option key={entry.id} value={entry.id}>
-                            {entry.descricao}
-                        </option>
-                    ))}
-                </PedidoSelectField>
+                    options={[
+                        { value: '', label: 'Selecione' },
+                        ...viewModel.catalogs.paymentMethods.map((entry) => ({
+                            value: String(entry.id),
+                            label: entry.descricao,
+                        })),
+                    ]}
+                />
             </div>
 
             {/* Data de entrega */}
@@ -174,15 +173,14 @@ export function PedidoClienteFields({
                 onChange={(value) =>
                     setValue('carrierId', optionId(value))
                 }
-            >
-                <option value="">Selecione</option>
-
-                {viewModel.catalogs.carriers.map((entry) => (
-                    <option key={entry.id} value={entry.id}>
-                        {entry.nome}
-                    </option>
-                ))}
-            </PedidoSelectField>
+                options={[
+                    { value: '', label: 'Selecione' },
+                    ...viewModel.catalogs.carriers.map((entry) => ({
+                        value: String(entry.id),
+                        label: entry.nome,
+                    })),
+                ]}
+            />
         </div>
     )
 }
@@ -252,20 +250,20 @@ function PedidoAddressSelect({
             onChange={onChange}
             disabled={disabled}
             error={error}
-        >
-            <option value="">
-                {disabled
-                    ? pedidoStrings.selectCustomerFirst
-                    : value === null
-                      ? pedidoStrings.undefinedAddress
-                      : pedidoStrings.addressUnavailable}
-            </option>
-
-            {viewModel.addresses.map((address) => (
-                <option key={address.id} value={address.id}>
-                    {address.street}, {address.number} · {address.city}
-                </option>
-            ))}
-        </PedidoSelectField>
+            options={[
+                {
+                    value: '',
+                    label: disabled
+                        ? pedidoStrings.selectCustomerFirst
+                        : value === null
+                          ? pedidoStrings.undefinedAddress
+                          : pedidoStrings.addressUnavailable,
+                },
+                ...viewModel.addresses.map((address) => ({
+                    value: String(address.id),
+                    label: `${address.street}, ${address.number} · ${address.city}`,
+                })),
+            ]}
+        />
     )
 }

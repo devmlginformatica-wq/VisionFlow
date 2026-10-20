@@ -224,18 +224,20 @@ function mapClient(row: ApiClienteRow): Cliente {
 }
 
 export class ApiClienteRepository implements ClienteRepository {
-    async list(): Promise<Cliente[]> {
+    async list(options?: { busca?: string; limit?: number }): Promise<Cliente[]> {
         const clients: Cliente[] = []
         let cursor: string | null = null
+        const onePageOnly = options?.busca !== undefined || options?.limit !== undefined
 
         do {
-            const params = new URLSearchParams({ limit: '100' })
+            const params = new URLSearchParams({ limit: String(options?.limit ?? 100) })
+            if (options?.busca) params.set('busca', options.busca)
             if (cursor !== null) params.set('cursor', cursor)
 
             const response = await apiRequest<ApiClientePage>(`/clientes?${params.toString()}`)
             clients.push(...(response.items ?? []).map(mapClient))
             cursor = response.nextCursor ?? null
-        } while (cursor !== null)
+        } while (cursor !== null && !onePageOnly)
 
         return clients
     }

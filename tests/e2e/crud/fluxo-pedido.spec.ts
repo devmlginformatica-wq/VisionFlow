@@ -103,7 +103,12 @@ test.describe('CRUD de pedido', () => {
 
     await test.step('CREATE', async () => {
       await page.goto('/app/pedidos/novo')
-      await page.getByLabel('Cliente').selectOption({ label: nomeCliente })
+      await page.getByLabel('Cliente').click()
+      const customerSearch = page.getByRole('searchbox', {
+        name: 'Buscar cliente por nome, razão social, fantasia ou código...',
+      })
+      await customerSearch.fill(nomeCliente)
+      await page.getByRole('option', { name: nomeCliente, exact: true }).click()
       await expect(page.getByLabel('Endereço cobrança')).toHaveValue(String(enderecoId), { timeout: 10000 })
       await page.getByRole('tab', { name: 'Produtos' }).click()
       await page.getByRole('button', { name: 'Adicionar Produto' }).last().click()

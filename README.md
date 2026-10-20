@@ -141,6 +141,24 @@ npm run test:e2e:ui
 npm run test:e2e:report
 ```
 
+### Preparar e executar os testes E2E com a API local
+
+Os testes Playwright iniciam automaticamente o Vite (`localhost:5173`) e a API Go
+(`localhost:8080`). Antes da primeira execução, prepare o PostgreSQL nativo local
+(não é necessário Docker) e configure `visionflow-api/.env` e
+`visionflow-api/db/flyway.conf`. A partir da raiz do workspace:
+
+```bash
+./visionflow-api/dev-up.sh
+cd VisionFlow
+npm run test:e2e
+```
+
+O script aplica as migrations pendentes e os seeds idempotentes do Demo Comercial;
+ele não apaga nem recria o banco. O Playwright inicia os servidores durante a
+execução dos testes e, fora do CI, reutiliza servidores já disponíveis nas portas
+configuradas.
+
 ## Conhecimento de integração
 
 O projeto usa a API configurada para os fluxos disponíveis, por meio de:

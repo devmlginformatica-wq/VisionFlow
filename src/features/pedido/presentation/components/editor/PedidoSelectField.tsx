@@ -1,11 +1,12 @@
-import type { ReactNode } from 'react'
+import { SearchableSelect } from '../../../../../core/components/SearchableSelect'
+import type { SearchableSelectOption } from '../../../../../core/components/SearchableSelect'
 
 interface PedidoSelectFieldProps {
     id: string
     label: string
     value: string
     onChange: (value: string) => void
-    children: ReactNode
+    options: readonly SearchableSelectOption[]
     disabled?: boolean
     error?: string
 }
@@ -15,7 +16,7 @@ export function PedidoSelectField({
     label,
     value,
     onChange,
-    children,
+    options,
     disabled = false,
     error,
 }: PedidoSelectFieldProps): React.JSX.Element {
@@ -29,17 +30,16 @@ export function PedidoSelectField({
             </label>
 
             <div className="min-w-0">
-                <select
+                <SearchableSelect
                     id={id}
                     value={value}
-                    onChange={(event) => onChange(event.target.value)}
+                    onValueChange={onChange}
+                    options={options}
+                    placeholder="Selecione"
+                    searchPlaceholder={`Buscar ${label.toLocaleLowerCase('pt-BR')}...`}
                     disabled={disabled}
-                    aria-invalid={Boolean(error)}
-                    aria-describedby={error ? `${id}-error` : undefined}
-                    className="h-10 w-full min-w-0 rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-sm disabled:bg-[var(--color-canvas)] disabled:opacity-60"
-                >
-                    {children}
-                </select>
+                    error={error}
+                />
                 {error && <p id={`${id}-error`} role="alert" className="mt-1 text-xs text-[var(--color-danger)]">{error}</p>}
             </div>
         </div>

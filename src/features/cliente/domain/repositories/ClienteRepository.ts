@@ -3,7 +3,7 @@ import type { Endereco, EnderecoInput } from '../entities/Endereco'
 import type { Titulo } from '../entities/Titulo'
 
 export interface ClienteRepository {
-    list(): Promise<Cliente[]>
+    list(options?: { busca?: string; limit?: number }): Promise<Cliente[]>
     getById(id: number): Promise<Cliente | null>
     save(cliente: Cliente): Promise<Cliente>
     delete(id: number): Promise<void>

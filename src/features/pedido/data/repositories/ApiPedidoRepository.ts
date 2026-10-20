@@ -272,7 +272,7 @@ export class ApiPedidoRepository implements PedidoRepository {
         }))
     }
 
-    async listProducts(): Promise<Array<{
+    async listProducts(options?: { busca?: string; limit?: number }): Promise<Array<{
         id: number
         code: string
         description: string
@@ -284,14 +284,16 @@ export class ApiPedidoRepository implements PedidoRepository {
     }>> {
         const products: ApiProdutoRow[] = []
         let cursor: string | null = null
+        const onePageOnly = options?.busca !== undefined || options?.limit !== undefined
 
         do {
-            const params = new URLSearchParams({ limit: '100' })
+            const params = new URLSearchParams({ limit: String(options?.limit ?? 100) })
+            if (options?.busca) params.set('busca', options.busca)
             if (cursor !== null) params.set('cursor', cursor)
             const response = await apiRequest<ApiProdutoPage>(`/produtos?${params.toString()}`)
             products.push(...(response.items ?? []))
             cursor = response.nextCursor ?? null
-        } while (cursor !== null)
+        } while (cursor !== null && !onePageOnly)
 
         return products.map((product) => ({
             id: product.id,

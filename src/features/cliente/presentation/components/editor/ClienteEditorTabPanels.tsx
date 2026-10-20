@@ -25,7 +25,7 @@ export function ClienteEditorTabPanels({ form, enderecoViewModel, catalogs, cata
         <>
             <Tabs.Content value="general"><AbaDadosGerais form={form} consultarCnpj={consultarCnpj} onAddressFound={onAddressFound} /></Tabs.Content>
             <Tabs.Content value="addresses"><AbaEnderecos viewModel={enderecoViewModel} /></Tabs.Content>
-            <Tabs.Content value="defaults"><AbaPadroes register={form.register} catalogs={catalogs} catalogsLoading={catalogsLoading} /></Tabs.Content>
+            <Tabs.Content value="defaults"><AbaPadroes control={form.control} register={form.register} catalogs={catalogs} catalogsLoading={catalogsLoading} /></Tabs.Content>
             <Tabs.Content value="titles"><AbaTitulos titulos={titulos} /></Tabs.Content>
             <Tabs.Content value="other"><AbaOutros register={form.register} error={form.formState.errors.creditLimit} /></Tabs.Content>
         </>

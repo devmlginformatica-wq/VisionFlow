@@ -21,8 +21,7 @@ test('abrir o primeiro pedido mostra cliente, item e total sem 404', async ({ pa
 
   await expect(page).toHaveURL(/\/app\/pedidos\/\d+/)
   await expect(page.getByRole('heading', { name: /Pedido PED\d+/i })).toBeVisible()
-  const selectedCustomer = page.getByLabel('Cliente').getByRole('option', { selected: true })
-  await expect(selectedCustomer).not.toHaveText('Selecione')
+  await expect(page.getByLabel('Cliente')).not.toHaveText('Selecione')
 
   await page.getByRole('tab', { name: 'Produtos' }).click()
   await expect(page.getByText(/^\d+ itens$/)).toBeVisible()
