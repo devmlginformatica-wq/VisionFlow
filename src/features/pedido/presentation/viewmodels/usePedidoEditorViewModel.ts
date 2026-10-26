@@ -92,6 +92,11 @@ export function usePedidoEditorViewModel(type: PedidoTipo, orderId: number | nul
     const activeProductQuery = useRef('')
     const selectedClientId = useRef<number | null>(pedido.customerId)
 
+    useEffect(() => () => {
+        clientSearchGeneration.current += 1
+        productSearchGeneration.current += 1
+    }, [])
+
     useEffect(() => {
         selectedClientId.current = pedido.customerId
     }, [pedido.customerId])
@@ -276,8 +281,11 @@ export function usePedidoEditorViewModel(type: PedidoTipo, orderId: number | nul
             setCatalogs((current) => ({ ...current, products }))
         } catch (loadError: unknown) {
             if (generation !== productSearchGeneration.current) return
-            logger.error('Não foi possível pesquisar produtos para o pedido.', loadError)
-            setProductSearchError(loadError instanceof Error ? loadError.message : pedidoStrings.loadFailed)
+            const message = loadError instanceof Error ? loadError.message : pedidoStrings.loadFailed
+            if (!message.startsWith('Busca indisponível offline.')) {
+                logger.error('Não foi possível pesquisar produtos para o pedido.', loadError)
+            }
+            setProductSearchError(message)
         } finally {
             if (generation === productSearchGeneration.current) setIsSearchingProducts(false)
         }

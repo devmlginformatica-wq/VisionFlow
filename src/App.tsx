@@ -1,4 +1,5 @@
 import { createBrowserRouter, RouterProvider } from 'react-router-dom'
+import { useEffect } from 'react'
 import { AppShell } from './core/shell/AppShell'
 import { kStr, shellRoutes } from './core/shell/shell.constants'
 import { ShellPlaceholderPage } from './core/shell/pages/ShellPlaceholderPage'
@@ -10,6 +11,7 @@ import { ClienteEditorPage } from './features/cliente/presentation/pages/Cliente
 import { PedidoTipo } from './features/pedido/domain/entities/PedidoTipo'
 import { PedidoEditorPage } from './features/pedido/presentation/pages/PedidoEditorPage'
 import { PedidoListaPage } from './features/pedido/presentation/pages/PedidoListaPage'
+import { useSyncManager } from './features/sync/presentation/hooks/useSyncManager'
 
 const router = createBrowserRouter([
   {
@@ -38,5 +40,16 @@ const router = createBrowserRouter([
 ])
 
 export default function App(): React.JSX.Element {
+  useSyncManager()
+
+  useEffect(() => {
+    const handleSessionExpired = (): void => {
+      void router.navigate('/login', { replace: true, state: { sessionExpired: true } })
+    }
+
+    window.addEventListener('visionflow:session-expired', handleSessionExpired)
+    return () => window.removeEventListener('visionflow:session-expired', handleSessionExpired)
+  }, [])
+
   return <RouterProvider router={router} />
 }

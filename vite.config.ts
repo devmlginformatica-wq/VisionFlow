@@ -20,7 +20,7 @@ export default defineConfig(({ mode }) => {
       react(),
       VitePWA({
         registerType: 'autoUpdate',
-        includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'robots.txt'],
+        includeAssets: ['favicon.svg'],
         manifest: {
           name: 'Vision Flow',
           short_name: 'VisionFlow',
@@ -30,9 +30,20 @@ export default defineConfig(({ mode }) => {
           display: 'standalone',
           start_url: '/',
           icons: [
-            { src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' },
-            { src: 'pwa-512x512.png', sizes: '512x512', type: 'image/png' },
-            { src: 'pwa-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' },
+            { src: 'pwa-icon.svg', sizes: 'any', type: 'image/svg+xml' },
+            { src: 'pwa-icon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any maskable' },
+          ],
+        },
+        workbox: {
+          globPatterns: ['**/*.{js,css,html,ico,png,svg,webmanifest}'],
+          runtimeCaching: [
+            {
+              urlPattern: ({ url }) =>
+                /^\/(?:health|auth|home|clientes|pedidos|orcamentos|agenda|tarefas|notificacoes|shell|cep|empresas|condicoes-pagamento|formas-pagamento|transportadoras|tabelas-preco|produtos)(?:\/|$)/.test(
+                  url.pathname,
+                ),
+              handler: 'NetworkOnly',
+            },
           ],
         },
       }),

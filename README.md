@@ -201,6 +201,14 @@ A aplicação foi preparada para uso como PWA com:
 - cache offline com IndexedDB usando Dexie
 - suporte à instalação em dispositivos desktop/mobile
 
+Clientes, pedidos e orçamentos ficam disponíveis no IndexedDB após serem
+carregados online. Pedidos e orçamentos preservam seus itens e IDs relacionados;
+os catálogos de empresas, produtos, condições e formas de pagamento,
+transportadoras e tabelas de preço são reutilizados offline. Endereços de
+clientes são cacheados por cliente, e consultas CNPJ ficam disponíveis offline
+somente para documentos já consultados. Uma busca de produto ou CNPJ sem cache
+informa que é necessária uma conexão.
+
 ## Observações
 
 - Dados locais em `src/mocks/` continuam disponíveis como fixtures e para

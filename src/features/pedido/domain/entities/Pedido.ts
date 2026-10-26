@@ -1,3 +1,4 @@
+import type { SyncStatus } from '../../../../core/storage/db'
 import type { ItemPedido } from './ItemPedido'
 import type { PedidoStatus, PedidoTipo } from './PedidoTipo'
 
@@ -14,6 +15,8 @@ export interface PedidoTotals {
 
 export interface Pedido {
     id: number | null
+    updated_at?: string
+    syncStatus?: SyncStatus
     type: PedidoTipo
     number: string
     customerOrderNumber: string

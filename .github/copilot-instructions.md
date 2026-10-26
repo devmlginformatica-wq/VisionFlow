@@ -148,3 +148,43 @@ Script anti-FOUC no index.html.
 Cada arquivo em bloco separado, precedido do caminho relativo.
 Sem prosa final. Comentários só onde não for óbvio.
 Se ambíguo, PERGUNTAR antes de gerar.
+
+---
+
+## FASE OFFLINE-FIRST (ATUAL)
+
+### Decisões travadas (Não sugerir alternativas)
+- A fila de sync vive em `features/sync/` (Feature-First). NÃO vai em `core/`.
+- Cada feature offline-first tem DOIS datasources em `data/datasources/`:
+  - `LocalDatasource` (Dexie) — leitura/escrita local
+  - `ApiDatasource` (fetch) — único ponto que fala com a rede
+- Cada feature offline-first tem UMA implementação de repository:
+  `OfflineFirstXRepository`, que substitui o `ApiRepository` em produção.
+  O `MockRepository` continua existindo para dev sem backend.
+- `OfflineFirstXRepository`:
+  - Lê do Dexie primeiro (resposta imediata)
+  - Dispara fetch em background para atualizar o Dexie
+  - Em escritas, grava no Dexie com `syncStatus="pending"` e enfileira uma
+    `SyncOperation` na fila
+- `SyncEngine` vive em `features/sync/domain/services/` e é injetado via
+  `core/di`. NUNCA chama fetch direto — usa o `ApiDatasource` da feature.
+- `SyncOperation` é entidade pura em `features/sync/domain/entities/` com
+  `fromJson`/`toJson`/`copyWith`/`equals`.
+- Toda entidade offline-first ganha:
+  - `updated_at: string` (ISO 8601) — vem do backend
+  - `syncStatus: 'synced' | 'pending' | 'error'` — local, nunca enviado à API
+- `SyncQueue` persistida em Dexie (`sync_queue`), FIFO, com:
+  `id, entity, entityId, action ('create'|'update'|'delete'), payload,
+  createdAt, attempts, lastError`
+- Resolução de conflito: `newer-wins`. Antes de enviar update, `SyncEngine`
+  faz `GET /{entity}/{id}` e compara `updated_at`. Se o do servidor for mais
+  novo, descarta o local e marca `syncStatus="error"` com `lastError`.
+- Detecção online/offline via `navigator.onLine` + eventos `online`/`offline`,
+  encapsulada em `useNetworkStatus` em `core/utils`.
+- Service Worker (`vite-plugin-pwa`) faz cache APENAS do app shell.
+
+### Regras complementares
+- ViewModel expõe apenas: `loading`, `error`, `data`, `syncStatus`.
+- View nunca enfileira operação. Só chama ViewModel.
+- Escritas offline NÃO bloqueiam a UI (Optimistic UI).
+- Nenhum componente importa Dexie. Nenhum datasource faz regra de negócio.

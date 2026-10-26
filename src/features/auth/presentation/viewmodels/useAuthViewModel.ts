@@ -31,6 +31,13 @@ function getRedirectTarget(state: unknown, search: string): string {
     return requestedPath ?? '/'
 }
 
+function isSessionExpiredState(state: unknown): boolean {
+    return typeof state === 'object'
+        && state !== null
+        && 'sessionExpired' in state
+        && state.sessionExpired === true
+}
+
 export interface AuthViewModel {
     loading: boolean
     error: string | null
@@ -42,7 +49,9 @@ export function useAuthViewModel(): AuthViewModel {
     const navigate = useNavigate()
     const setSession = useAuthStore((state) => state.setSession)
     const [loading, setLoading] = useState(false)
-    const [error, setError] = useState<string | null>(null)
+    const [error, setError] = useState<string | null>(
+        () => isSessionExpiredState(location.state) ? 'Sessão expirada' : null,
+    )
     const submissionLock = useRef(false)
 
     async function submitLogin(credentials: LoginCredentials): Promise<void> {

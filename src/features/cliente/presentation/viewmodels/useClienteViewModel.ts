@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import logger from 'loglevel'
 import { ApiClienteRepository } from '../../data/repositories/ApiClienteRepository'
@@ -42,24 +42,37 @@ export function useClienteViewModel(): ClienteViewModel {
     const [error, setError] = useState<string | null>(null)
     const [search, setSearch] = useState('')
     const [gridView, setGridView] = useState(true)
+    const isMountedRef = useRef(false)
+    const requestIdRef = useRef(0)
     const filtros = searchParams.get('filtro') ?? 'todos'
 
-    const listar = useCallback(async (): Promise<void> => {
+    const listar = useCallback(async (isMounted: () => boolean = () => isMountedRef.current): Promise<void> => {
+        if (!isMounted()) return
+        const requestId = ++requestIdRef.current
         setLoading(true)
         setError(null)
         try {
-            setClientes(await clienteRepository.list())
+            const loadedClients = await clienteRepository.list()
+            if (!isMounted() || requestId !== requestIdRef.current) return
+            setClientes(loadedClients)
         } catch (loadError: unknown) {
+            if (!isMounted() || requestId !== requestIdRef.current) return
             logger.error('Não foi possível carregar clientes.', loadError)
             setError('Não foi possível carregar os clientes.')
         } finally {
-            setLoading(false)
+            if (isMounted() && requestId === requestIdRef.current) setLoading(false)
         }
     }, [])
 
     useEffect(() => {
-        const timeoutId = window.setTimeout(() => { void listar() }, 0)
-        return () => window.clearTimeout(timeoutId)
+        let isMounted = true
+        isMountedRef.current = true
+        const timeoutId = window.setTimeout(() => { void listar(() => isMounted) }, 0)
+        return () => {
+            isMounted = false
+            isMountedRef.current = false
+            window.clearTimeout(timeoutId)
+        }
     }, [listar])
 
     const visibleClients = useMemo(() => {
@@ -91,12 +104,14 @@ export function useClienteViewModel(): ClienteViewModel {
     async function salvar(values: ClienteFormValues): Promise<Cliente> {
         const parsedValues = clienteSchema.parse(values)
         const saved = await clienteRepository.save(parsedValues)
+        if (!isMountedRef.current) return saved
         setClientes((current) => [saved, ...current.filter((client) => client.id !== saved.id)])
         return saved
     }
 
     async function excluir(id: number): Promise<void> {
         await clienteRepository.delete(id)
+        if (!isMountedRef.current) return
         setClientes((current) => current.filter((client) => client.id !== id))
     }
 

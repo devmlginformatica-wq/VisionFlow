@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import logger from 'loglevel'
 import { ApiPedidoRepository } from '../../data/repositories/ApiPedidoRepository'
@@ -26,24 +26,37 @@ export function usePedidoListaViewModel(type: PedidoTipo): PedidoListaViewModel 
     const [search, setSearch] = useState('')
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
+    const isMountedRef = useRef(false)
+    const requestIdRef = useRef(0)
     const filtros = searchParams.get('filtro') ?? 'todos'
 
-    const listar = useCallback(async (): Promise<void> => {
+    const listar = useCallback(async (isMounted: () => boolean = () => isMountedRef.current): Promise<void> => {
+        if (!isMounted()) return
+        const requestId = ++requestIdRef.current
         setLoading(true)
         setError(null)
         try {
-            setPedidos(await pedidoRepository.list(type))
+            const loadedOrders = await pedidoRepository.list(type)
+            if (!isMounted() || requestId !== requestIdRef.current) return
+            setPedidos(loadedOrders)
         } catch (loadError: unknown) {
+            if (!isMounted() || requestId !== requestIdRef.current) return
             logger.error(pedidoStrings.loadFailed, loadError)
             setError(pedidoStrings.loadFailed)
         } finally {
-            setLoading(false)
+            if (isMounted() && requestId === requestIdRef.current) setLoading(false)
         }
     }, [type])
 
     useEffect(() => {
-        const timeoutId = window.setTimeout(() => { void listar() }, 0)
-        return () => window.clearTimeout(timeoutId)
+        let isMounted = true
+        isMountedRef.current = true
+        const timeoutId = window.setTimeout(() => { void listar(() => isMounted) }, 0)
+        return () => {
+            isMounted = false
+            isMountedRef.current = false
+            window.clearTimeout(timeoutId)
+        }
     }, [listar])
 
     const filteredOrders = useMemo(() => {

@@ -1,3 +1,5 @@
+import { useAuthStore } from '../../features/auth/presentation/stores/useAuthStore'
+
 type ApiErrorBody = {
     code?: string
     message?: string
@@ -10,6 +12,20 @@ type ApiEnvelope<T> = {
 }
 
 export const useApiRepository = import.meta.env.VITE_USE_API !== 'false'
+
+export function handleAuthFailure(status: number): void {
+    if (
+        (status !== 401 && status !== 403)
+        || typeof navigator === 'undefined'
+        || navigator.onLine !== true
+    ) {
+        return
+    }
+
+    useAuthStore.getState().clearSession()
+    localStorage.clear()
+    window.dispatchEvent(new Event('visionflow:session-expired'))
+}
 
 export function getApiBaseUrl(): string {
     if (import.meta.env.DEV) {
@@ -78,6 +94,10 @@ export async function apiRequest<T>(path: string, init: RequestInit = {}): Promi
         ...init,
         headers,
     })
+
+    if (!response.ok) {
+        handleAuthFailure(response.status)
+    }
 
     let payload: unknown = null
     const rawText = await response.text()

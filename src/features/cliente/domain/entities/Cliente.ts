@@ -3,6 +3,8 @@ import type { Titulo } from './Titulo'
 
 export interface Cliente {
     id: number | null
+    updated_at?: string
+    syncStatus?: 'synced' | 'pending' | 'error'
     name: string
     legalName: string
     tradeName: string

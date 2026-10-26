@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { Bell, Menu } from 'lucide-react'
+import { NetworkBadge } from '../components/NetworkBadge'
 import { useTheme } from '../theme/ThemeProvider'
 import { useAuthStore } from '../../features/auth/presentation/stores/useAuthStore'
 import { kStr, shellRoutes } from './shell.constants'
@@ -78,6 +79,7 @@ export function AppTopBar({ company, user, unreadNotifications, onMenuOpen }: Ap
             <CompanyDetails company={company} />
             <div className="ml-auto flex shrink-0 items-center gap-2">
                 <ThemeSelectorButton mode={mode} />
+                <NetworkBadge />
                 <div className="hidden md:block"><NotificationAction count={unreadNotifications} /></div>
                 <UserMenu user={user} />
                 <Link to={shellRoutes.login} onClick={clearSession} className="hidden h-10 items-center gap-2 rounded-md px-3 text-sm hover:bg-[var(--color-canvas)] lg:inline-flex">

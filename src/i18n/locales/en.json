@@ -1,0 +1,10 @@
+{
+  "network": {
+    "online": "Online",
+    "offline": "Offline"
+  },
+  "sync": {
+    "pending": "Pending",
+    "error": "Sync error"
+  }
+}
