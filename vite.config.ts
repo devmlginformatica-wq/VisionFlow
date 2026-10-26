@@ -8,6 +8,29 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
 
   const apiTarget = env.VITE_API_PROXY_TARGET || 'http://localhost:8080';
+  const apiBaseUrl = new URL(env.VITE_API_BASE_URL || apiTarget);
+  const apiBasePath = apiBaseUrl.pathname.replace(/\/+$/, '');
+  const apiPathPattern =
+    /\/(?:api|health|auth|home|clientes|pedidos|orcamentos|agenda|tarefas|notificacoes|shell|cep|empresas|condicoes-pagamento|formas-pagamento|transportadoras|tabelas-preco|produtos)(?:\/|$)/;
+  const apiBasePathPattern = apiBasePath
+    ? new RegExp(`${apiBasePath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?:/|$)`)
+    : null;
+  const apiFallbackDenylist = [
+    apiPathPattern,
+    ...(apiBasePathPattern ? [apiBasePathPattern] : []),
+  ];
+  const apiMethods = ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE'] as const;
+  const apiUrlPatterns = [
+    apiPathPattern,
+    ...(apiBasePathPattern ? [apiBasePathPattern] : []),
+  ];
+  const apiRuntimeCaching = apiUrlPatterns.flatMap((urlPattern) =>
+    apiMethods.map((method) => ({
+      urlPattern,
+      method,
+      handler: 'NetworkOnly' as const,
+    })),
+  );
 
   const proxyOptions = {
     target: apiTarget,
@@ -36,15 +59,8 @@ export default defineConfig(({ mode }) => {
         },
         workbox: {
           globPatterns: ['**/*.{js,css,html,ico,png,svg,webmanifest}'],
-          runtimeCaching: [
-            {
-              urlPattern: ({ url }) =>
-                /^\/(?:health|auth|home|clientes|pedidos|orcamentos|agenda|tarefas|notificacoes|shell|cep|empresas|condicoes-pagamento|formas-pagamento|transportadoras|tabelas-preco|produtos)(?:\/|$)/.test(
-                  url.pathname,
-                ),
-              handler: 'NetworkOnly',
-            },
-          ],
+          navigateFallbackDenylist: apiFallbackDenylist,
+          runtimeCaching: apiRuntimeCaching,
         },
       }),
     ],
