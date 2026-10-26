@@ -462,7 +462,7 @@ export class ApiPedidoDatasource implements PedidoRepository {
             })),
         }
 
-        const isUpdate = pedido.id !== null && pedido.id !== undefined
+        const isUpdate = typeof pedido.id === 'number'
         const response = await apiRequest<ApiPedidoDetalhe | null>(
             isUpdate ? `/pedidos/${pedido.id}` : '/pedidos',
             {

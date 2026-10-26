@@ -8,6 +8,7 @@ import type { Endereco } from '../../../cliente/domain/entities/Endereco'
 import { ApiPedidoDatasource } from '../datasources/ApiPedidoDatasource'
 import { LocalPedidoDatasource } from '../datasources/LocalPedidoDatasource'
 import type { Pedido } from '../../domain/entities/Pedido'
+import { normalizePedidoId } from '../../domain/entities/PedidoId'
 import type { PedidoTipo } from '../../domain/entities/PedidoTipo'
 import type { PedidoRepository } from '../../domain/repositories/PedidoRepository'
 
@@ -30,23 +31,32 @@ export class OfflineFirstPedidoRepository implements PedidoRepository {
     }
 
     async getById(id: number | string, type: PedidoTipo): Promise<Pedido | null> {
-        const pedido = await this.localDatasource.getById(id, type)
-        if (typeof id === 'string') {
-            return pedido
-        }
+        try {
+            const storageId = normalizePedidoId(id)
+            const pedido = await this.localDatasource.getById(storageId, type)
+            if (typeof storageId === 'string') {
+                if (!storageId.startsWith('temp-')) {
+                    logger.warn(`Pedido id "${storageId}" is not a numeric API id or a temporary local id.`)
+                }
+                return pedido
+            }
 
-        if (pedido) {
-            void this.refreshPedido(id, type)
-            return pedido
-        }
+            if (pedido) {
+                void this.refreshPedido(storageId, type)
+                return pedido
+            }
 
-        void this.refreshPedido(id, type)
-        return null
+            void this.refreshPedido(storageId, type)
+            return null
+        } catch (error) {
+            logger.error(`Unable to read local pedido ${id}.`, error)
+            throw error
+        }
     }
 
     async save(pedido: Pedido): Promise<Pedido> {
         const now = new Date().toISOString()
-        const isNew = pedido.id === null
+        const isNew = pedido.id === null || typeof pedido.id === 'string'
         const id = isNew ? this.createTemporaryId() : pedido.id
 
         if (id === null) {
@@ -80,15 +90,16 @@ export class OfflineFirstPedidoRepository implements PedidoRepository {
     }
 
     async delete(id: number | string): Promise<void> {
+        const storageId = normalizePedidoId(id)
         const pendingOperations = await this.syncQueueRepository.getPending()
         const pendingCreate = pendingOperations.some((operation) => operation.entity === 'pedido'
-            && operation.entityId === id && operation.action === 'create')
+            && operation.entityId === storageId && operation.action === 'create')
 
-        await this.localDatasource.delete(id)
+        await this.localDatasource.delete(storageId)
 
         if (pendingCreate) {
             for (const operation of pendingOperations) {
-                if (operation.entity === 'pedido' && operation.entityId === id) {
+                if (operation.entity === 'pedido' && operation.entityId === storageId) {
                     await this.syncQueueRepository.remove(operation.id)
                 }
             }
@@ -98,9 +109,9 @@ export class OfflineFirstPedidoRepository implements PedidoRepository {
         const createdAt = new Date().toISOString()
         await this.syncQueueRepository.enqueue(SyncOperation.fromJson({
             entity: 'pedido',
-            entityId: id,
+            entityId: storageId,
             action: 'delete',
-            payload: { id },
+            payload: { id: storageId },
             createdAt,
         }))
         this.dispatchSync()
@@ -221,7 +232,7 @@ export class OfflineFirstPedidoRepository implements PedidoRepository {
         try {
             const remotePedidos = await this.apiDatasource.list(type)
             for (const remotePedido of remotePedidos) {
-                if (remotePedido.id === null) {
+                if (typeof remotePedido.id !== 'number') {
                     continue
                 }
 

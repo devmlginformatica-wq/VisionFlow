@@ -14,7 +14,7 @@ export interface PedidoTotals {
 }
 
 export interface Pedido {
-    id: number | null
+    id: number | string | null
     updated_at?: string
     syncStatus?: SyncStatus
     type: PedidoTipo

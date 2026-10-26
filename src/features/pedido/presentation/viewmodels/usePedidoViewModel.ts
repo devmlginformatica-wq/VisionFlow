@@ -1,6 +1,6 @@
 import type { PedidoTipo } from '../../domain/entities/PedidoTipo'
 import { usePedidoEditorViewModel } from './usePedidoEditorViewModel'
 
-export function usePedidoViewModel(type: PedidoTipo, orderId: number | null) {
+export function usePedidoViewModel(type: PedidoTipo, orderId: number | string | null) {
     return usePedidoEditorViewModel(type, orderId)
 }

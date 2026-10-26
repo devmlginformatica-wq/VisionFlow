@@ -1,6 +1,7 @@
 import { db, type StoredCatalogRecord, type StoredCustomerAddresses, type StoredPedido, type SyncStatus } from '../../../../core/storage/db'
 import type { Endereco } from '../../../cliente/domain/entities/Endereco'
 import type { Pedido } from '../../domain/entities/Pedido'
+import { normalizePedidoId } from '../../domain/entities/PedidoId'
 import type { PedidoTipo } from '../../domain/entities/PedidoTipo'
 
 type CatalogProduct = {
@@ -86,7 +87,7 @@ export class LocalPedidoDatasource {
     }
 
     async getById(id: number | string, type?: PedidoTipo): Promise<Pedido | null> {
-        const record = await db.pedidos.get(id)
+        const record = await db.pedidos.get(normalizePedidoId(id))
         if (!record) {
             return null
         }
@@ -128,14 +129,14 @@ export class LocalPedidoDatasource {
 
         return {
             ...data,
-            id: typeof record.id === 'number' ? record.id : null,
+            id: record.id,
             updated_at: record.updated_at,
             syncStatus: record.syncStatus,
         }
     }
 
     async delete(id: number | string): Promise<void> {
-        await db.pedidos.delete(id)
+        await db.pedidos.delete(normalizePedidoId(id))
     }
 
     private toPedido(record: StoredPedido): Pedido {
@@ -145,7 +146,7 @@ export class LocalPedidoDatasource {
 
         return {
             ...record.data,
-            id: typeof record.id === 'number' ? record.id : null,
+            id: record.id,
             updated_at: record.updated_at,
             syncStatus: record.syncStatus,
         }

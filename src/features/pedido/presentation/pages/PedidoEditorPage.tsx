@@ -17,7 +17,11 @@ interface PedidoEditorPageProps {
 
 export function PedidoEditorPage({ tipo }: PedidoEditorPageProps): React.JSX.Element {
     const { id } = useParams()
-    const orderId = id && id !== 'novo' ? Number(id) : null
+    const orderId = id && id !== 'novo'
+        ? /^\d+$/.test(id) && Number.isSafeInteger(Number(id)) && Number(id) > 0
+            ? Number(id)
+            : id
+        : null
     const viewModel = usePedidoViewModel(tipo, orderId)
     const form = useForm<PedidoFormValues>({ resolver: zodResolver(pedidoSchema), defaultValues: viewModel.pedido })
     const { reset } = form

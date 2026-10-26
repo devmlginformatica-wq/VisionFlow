@@ -314,6 +314,7 @@ test.describe.serial('QA E2E completo — CRUD, relacionamentos e offline-first'
         context,
         loginTenant4,
     }) => {
+        const browserErrors: string[] = []
         page.on('response', (response) => {
             const path = new URL(response.url()).pathname
             if (path === '/clientes' && response.request().method() === 'POST' && response.ok()) {
@@ -323,6 +324,10 @@ test.describe.serial('QA E2E completo — CRUD, relacionamentos e offline-first'
                 observedOrderCreateIds.push(responseId(response))
             }
         })
+        page.on('console', (message) => {
+            if (message.type() === 'error') browserErrors.push(message.text())
+        })
+        page.on('pageerror', (error) => browserErrors.push(error.message))
         await test.step('Setup — login, limpeza do Dexie e dados de API', async () => {
             await loginTenant4()
             await clearDexie(page)
@@ -732,6 +737,23 @@ test.describe.serial('QA E2E completo — CRUD, relacionamentos e offline-first'
             }
             expect(item.product.id).toBe(product.id)
             expect(item.product.descricao).toBe(product.description)
+
+            await page.goto('/app/pedidos')
+            const syncedOrderCard = page.locator(`main a[href="/app/pedidos/${offlineOrderId}"]`)
+            await expect(syncedOrderCard).toBeVisible()
+            const browserErrorCountBeforeOpening = browserErrors.length
+            await syncedOrderCard.click()
+            await expect(page).toHaveURL(new RegExp(`/app/pedidos/${offlineOrderId}$`))
+            await expect(page.getByRole('heading', { name: /Pedido/ })).toBeVisible()
+            await expect(page.getByLabel('Cliente')).toContainText(editedOfflineCustomerName)
+            await page.getByRole('tab', { name: 'Produtos' }).click()
+            const reopenedItem = page.getByRole('button').filter({ hasText: product.description })
+            await expect(reopenedItem).toBeVisible()
+            await expect(reopenedItem).toContainText('1')
+            expect(
+                browserErrors.slice(browserErrorCountBeforeOpening),
+                'Abrir o pedido sincronizado não deve gerar erros no console.',
+            ).toEqual([])
 
             if (offlineDeletedClientId !== null) {
                 const deletedClientResponse = await page.request.get(`/clientes/${offlineDeletedClientId}`, {

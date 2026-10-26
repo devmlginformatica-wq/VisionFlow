@@ -28,7 +28,7 @@ export class ApiPedidoRepository implements PedidoRepository {
     }
 
     async getById(id: number | string, type: PedidoTipo): Promise<Pedido | null> {
-        return this.offlineRepository.getById(Number(id) || id, type)
+        return this.offlineRepository.getById(id, type)
     }
 
     async save(pedido: Pedido): Promise<Pedido> {
@@ -36,7 +36,7 @@ export class ApiPedidoRepository implements PedidoRepository {
     }
 
     async delete(id: number | string): Promise<void> {
-        await this.offlineRepository.delete(Number(id) || id)
+        await this.offlineRepository.delete(id)
     }
 
     async getCustomerAddresses(customerId: number | string): Promise<Endereco[]> {

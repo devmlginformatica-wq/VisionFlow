@@ -6,6 +6,7 @@ import type { Cliente } from '../../../cliente/domain/entities/Cliente'
 import { ApiPedidoRepository } from '../../data/repositories/ApiPedidoRepository'
 import type { ItemPedido } from '../../domain/entities/ItemPedido'
 import type { Pedido } from '../../domain/entities/Pedido'
+import { normalizePedidoId } from '../../domain/entities/PedidoId'
 import { PedidoTipo } from '../../domain/entities/PedidoTipo'
 import { calcularPedidoTotais } from '../../domain/services/PedidoTotais'
 import type { PedidoFormValues } from '../../domain/validators/pedidoSchema'
@@ -65,7 +66,7 @@ export interface PedidoEditorViewModel {
     retry: () => void
 }
 
-export function usePedidoEditorViewModel(type: PedidoTipo, orderId: number | null): PedidoEditorViewModel {
+export function usePedidoEditorViewModel(type: PedidoTipo, orderId: number | string | null): PedidoEditorViewModel {
     const location = useLocation()
     const navigate = useNavigate()
     const [pedido, setPedido] = useState<Pedido>(() => pedidoRepository.createDraft(type))
@@ -299,7 +300,8 @@ export function usePedidoEditorViewModel(type: PedidoTipo, orderId: number | nul
         let active = true
         const timeoutId = window.setTimeout(async () => {
             try {
-                const loadedOrder = await pedidoRepository.getById(orderId, type)
+                const storageId = normalizePedidoId(orderId)
+                const loadedOrder = await pedidoRepository.getById(storageId, type)
                 if (!active) return
                 if (!loadedOrder) {
                     setError(pedidoStrings.notFound)
@@ -366,7 +368,7 @@ export function usePedidoEditorViewModel(type: PedidoTipo, orderId: number | nul
         try {
             const saved = await pedidoRepository.save({ ...pedido, ...values, id: pedido.id, status: pedido.status, items: pedido.items, totals: calcularPedidoTotais(pedido.items, values.freightAmount) })
             if (finalize) {
-                if (saved.id === null) throw new Error('A API não retornou o identificador do cadastro.')
+                if (typeof saved.id !== 'number') throw new Error('A API não retornou o identificador do cadastro.')
                 await pedidoRepository.finalize(saved.id, type)
                 setPedido({ ...saved, status: 'em_integracao', rejectionReason: null })
                 if (orderId === null) {
