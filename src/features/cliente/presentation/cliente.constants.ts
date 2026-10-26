@@ -96,5 +96,5 @@ export const clienteStrings = {
 export const clienteRoutes = {
     list: shellRoutes.clients,
     create: `${shellRoutes.clients}/novo`,
-    edit: (id: number): string => `${shellRoutes.clients}/${id}`,
+    edit: (id: number | string): string => `${shellRoutes.clients}/${id}`,
 } as const

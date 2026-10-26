@@ -30,7 +30,7 @@ export interface StoredPedido extends StoredEntityBase {
     id: number | string
     data?: Pedido
     type?: string
-    clientId?: number | null
+    clientId?: number | string | null
     status?: string
     customerName?: string
     number?: string

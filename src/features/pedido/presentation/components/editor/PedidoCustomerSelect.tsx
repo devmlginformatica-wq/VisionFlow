@@ -5,7 +5,7 @@ import type { PedidoFormValues } from '../../../domain/validators/pedidoSchema'
 import { pedidoStrings } from '../../pedido.constants'
 
 interface PedidoCustomerSelectProps {
-    customerId: number | null
+    customerId: number | string | null
     catalogs: PedidoEditorViewModel['catalogs']
     setValue: UseFormSetValue<PedidoFormValues>
     setCustomer: PedidoEditorViewModel['setCustomer']
@@ -13,8 +13,10 @@ interface PedidoCustomerSelectProps {
     isSearchingClients: boolean
 }
 
-function optionId(value: string): number | null {
-    return value ? Number(value) : null
+function optionId(value: string): number | string | null {
+    if (!value) return null
+    const numericValue = Number(value)
+    return Number.isSafeInteger(numericValue) ? numericValue : value
 }
 
 export function PedidoCustomerSelect({ customerId, catalogs, setValue, setCustomer, searchClients, isSearchingClients }: PedidoCustomerSelectProps): React.JSX.Element {

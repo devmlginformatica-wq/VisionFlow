@@ -4,7 +4,7 @@ import { clienteRoutes, clienteStrings } from '../../cliente.constants'
 import { ClienteEditorActionsMenu } from './ClienteEditorActionsMenu'
 
 interface ClienteEditorHeaderProps {
-    clientId: number | null
+    clientId: number | string | null
     saving: boolean
     locked: boolean
     onCancel: () => void

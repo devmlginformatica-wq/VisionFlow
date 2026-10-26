@@ -14,17 +14,20 @@ import { getOrderBasePath, pedidoStrings } from '../pedido.constants'
 const pedidoRepository = new ApiPedidoRepository()
 const clienteRepository = new ApiClienteRepository()
 
-type PedidoEditorClient = { id: number; nome: string; razaoSocial: string; nomeFantasia: string; codigo: string; cpf_cnpj: string }
+type PedidoEditorClient = { id: number | string; nome: string; razaoSocial: string; nomeFantasia: string; codigo: string; cpf_cnpj: string }
 
 function mapPedidoEditorClients(clients: Cliente[]): PedidoEditorClient[] {
-    return clients.flatMap((client) => client.id === null ? [] : [{
-        id: client.id,
-        nome: client.name,
-        razaoSocial: client.legalName,
-        nomeFantasia: client.tradeName,
-        codigo: client.integrationId,
-        cpf_cnpj: client.taxId,
-    }])
+    return clients.flatMap((client) => {
+        const id = client.id ?? client.localId
+        return id === undefined ? [] : [{
+            id,
+            nome: client.name,
+            razaoSocial: client.legalName,
+            nomeFantasia: client.tradeName,
+            codigo: client.integrationId,
+            cpf_cnpj: client.taxId,
+        }]
+    })
 }
 
 type PedidoEditorCatalogs = {
@@ -52,7 +55,7 @@ export interface PedidoEditorViewModel {
     isSearchingProducts: boolean
     searchClients: (query: string) => Promise<void>
     searchProducts: (query: string) => Promise<void>
-    setCustomer: (customerId: number | null) => Promise<PedidoEditorViewModel['addresses']>
+    setCustomer: (customerId: number | string | null) => Promise<PedidoEditorViewModel['addresses']>
     adicionarItem: (item: ItemPedido) => void
     atualizarItem: (item: ItemPedido) => void
     removerItem: (sequence: number) => void
@@ -90,7 +93,7 @@ export function usePedidoEditorViewModel(type: PedidoTipo, orderId: number | nul
     const productSearchGeneration = useRef(0)
     const activeClientQuery = useRef('')
     const activeProductQuery = useRef('')
-    const selectedClientId = useRef<number | null>(pedido.customerId)
+    const selectedClientId = useRef<number | string | null>(pedido.customerId)
 
     useEffect(() => () => {
         clientSearchGeneration.current += 1
@@ -335,7 +338,7 @@ export function usePedidoEditorViewModel(type: PedidoTipo, orderId: number | nul
         return () => { active = false; window.clearTimeout(timeoutId) }
     }, [orderId, reloadKey, type])
 
-    async function setCustomer(customerId: number | null): Promise<PedidoEditorViewModel['addresses']> {
+    async function setCustomer(customerId: number | string | null): Promise<PedidoEditorViewModel['addresses']> {
         const customer = catalogs.clients.find((item) => item.id === customerId)
         setAddresses([])
         setPedido((current) => ({ ...current, customerId, customerName: customer?.nome ?? '', customerTaxId: customer?.cpf_cnpj ?? '', billingAddressId: null, deliveryAddressId: null, collectionAddressId: null }))

@@ -3,6 +3,7 @@ import type { Titulo } from './Titulo'
 
 export interface Cliente {
     id: number | null
+    localId?: string
     updated_at?: string
     syncStatus?: 'synced' | 'pending' | 'error'
     name: string

@@ -45,8 +45,8 @@ export class OfflineFirstClienteRepository implements ClienteRepository {
 
     async save(cliente: Cliente): Promise<Cliente> {
         const now = new Date().toISOString()
-        const isNew = cliente.id === null
-        const id = isNew ? this.createTemporaryId() : cliente.id
+        const isNew = cliente.id === null && cliente.localId === undefined
+        const id = isNew ? this.createTemporaryId() : cliente.localId ?? cliente.id
         if (id === null) {
             throw new Error('Could not assign a local id to the cliente.')
         }
@@ -65,7 +65,18 @@ export class OfflineFirstClienteRepository implements ClienteRepository {
         })
 
         try {
-            await this.syncQueueRepository.enqueue(operation)
+            const pendingCreate = isNew
+                ? undefined
+                : (await this.syncQueueRepository.getPending()).find((pendingOperation) =>
+                    pendingOperation.entity === 'cliente'
+                    && pendingOperation.entityId === id
+                    && pendingOperation.action === 'create',
+                )
+            if (pendingCreate) {
+                await this.syncQueueRepository.updatePayload(pendingCreate.id, localClient)
+            } else {
+                await this.syncQueueRepository.enqueue(operation)
+            }
         } catch (error) {
             logger.error(`Unable to queue cliente ${id} for synchronization.`, error)
             await this.localDatasource.save({ ...localClient, syncStatus: 'error' }, 'error', id)

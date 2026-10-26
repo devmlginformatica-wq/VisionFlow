@@ -31,7 +31,7 @@ export interface ClienteViewModel {
     gridView: boolean
     listar: () => Promise<void>
     salvar: (values: ClienteFormValues) => Promise<Cliente>
-    excluir: (id: number) => Promise<void>
+    excluir: (id: number | string) => Promise<void>
     consultarCnpj: (taxId: string) => Promise<CnpjLookup>
 }
 
@@ -109,7 +109,7 @@ export function useClienteViewModel(): ClienteViewModel {
         return saved
     }
 
-    async function excluir(id: number): Promise<void> {
+    async function excluir(id: number | string): Promise<void> {
         await clienteRepository.delete(id)
         if (!isMountedRef.current) return
         setClientes((current) => current.filter((client) => client.id !== id))

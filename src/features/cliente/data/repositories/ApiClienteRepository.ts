@@ -28,7 +28,7 @@ export class ApiClienteRepository implements ClienteRepository {
         return this.offlineRepository.list(options)
     }
 
-    async getById(id: number): Promise<Cliente | null> {
+    async getById(id: number | string): Promise<Cliente | null> {
         return this.offlineRepository.getById(id)
     }
 
@@ -36,7 +36,7 @@ export class ApiClienteRepository implements ClienteRepository {
         return this.offlineRepository.save(cliente)
     }
 
-    async delete(id: number): Promise<void> {
+    async delete(id: number | string): Promise<void> {
         await this.offlineRepository.delete(id)
     }
 

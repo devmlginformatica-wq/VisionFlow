@@ -25,7 +25,7 @@ export interface Pedido {
     issueDate: string
     deliveryDate: string
     companyId: number | null
-    customerId: number | null
+    customerId: number | string | null
     customerName: string
     customerTaxId: string
     paymentConditionId: number | null

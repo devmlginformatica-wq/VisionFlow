@@ -33,7 +33,7 @@ export function ClienteListaPage(): React.JSX.Element {
                 <VfEmpty title={clienteStrings.emptyTitle} description={clienteStrings.emptyDescription} actionLabel={clienteStrings.add} onAction={addClient} />
             ) : (
                 <div className={viewModel.gridView ? 'grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3' : 'flex flex-col gap-3'}>
-                    {viewModel.visibleClients.map((cliente) => <ClienteCard key={cliente.id} cliente={cliente} listSearch={listSearch} onDelete={(id) => void viewModel.excluir(id)} />)}
+                    {viewModel.visibleClients.map((cliente) => <ClienteCard key={cliente.localId ?? cliente.id} cliente={cliente} listSearch={listSearch} onDelete={(id) => void viewModel.excluir(id)} />)}
                 </div>
             )}
             <button type="button" onClick={addClient} className="fixed bottom-6 right-6 z-20 inline-flex h-12 items-center gap-2 rounded-full bg-[var(--color-primary)] px-5 text-sm font-semibold text-[var(--color-primary-foreground)] shadow-lg hover:bg-[var(--color-primary-hover)] md:bottom-8 md:right-8"><Plus aria-hidden="true" size={19} />{clienteStrings.add}</button>

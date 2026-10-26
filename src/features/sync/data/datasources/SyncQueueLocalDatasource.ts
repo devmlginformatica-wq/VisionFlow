@@ -31,6 +31,14 @@ export class SyncQueueLocalDatasource {
         await db.sync_queue.delete(id)
     }
 
+    async updatePayload(id: string, payload: unknown): Promise<void> {
+        const existing = await db.sync_queue.get(id)
+        if (!existing) {
+            throw new Error(`Sync queue record not found for payload update: ${id}`)
+        }
+        await db.sync_queue.update(id, { payload })
+    }
+
     async remapEntityId(entity: 'cliente' | 'pedido', oldId: number | string, newId: number | string): Promise<void> {
         if (oldId === newId) {
             return
@@ -47,11 +55,33 @@ export class SyncQueueLocalDatasource {
                     ? {
                         ...client.data,
                         id: typeof newId === 'number' ? newId : null,
+                        localId: typeof newId === 'string' ? newId : undefined,
                         syncStatus: 'pending' as const,
                     }
                     : undefined
                 await db.clientes.delete(oldId)
                 await db.clientes.put({ ...client, id: newId, data })
+
+                const localOrders = await db.pedidos.toArray()
+                for (const order of localOrders) {
+                    if (order.clientId !== oldId && order.data?.customerId !== oldId) continue
+                    await db.pedidos.put({
+                        ...order,
+                        clientId: newId,
+                        data: order.data ? { ...order.data, customerId: newId } : undefined,
+                    })
+                }
+
+                const queuedOrders = await db.sync_queue.where('entity').equals('pedido').toArray()
+                for (const operation of queuedOrders) {
+                    const payload = operation.payload
+                    if (typeof payload !== 'object' || payload === null || Array.isArray(payload)) continue
+                    const orderPayload = payload as Record<string, unknown>
+                    if (orderPayload.customerId !== oldId) continue
+                    await db.sync_queue.update(operation.id, {
+                        payload: { ...orderPayload, customerId: newId },
+                    })
+                }
             } else {
                 const pedido = await db.pedidos.get(oldId)
                 if (pedido) {

@@ -17,6 +17,10 @@ export class DexieSyncQueueRepository implements SyncQueueRepository {
         await this.datasource.remove(id)
     }
 
+    async updatePayload(id: string, payload: unknown): Promise<void> {
+        await this.datasource.updatePayload(id, payload)
+    }
+
     async updateAttempts(id: string, attempts: number, lastError: string | null = null): Promise<void> {
         await this.datasource.updateAttempts(id, attempts, lastError)
     }

@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vision Flow — Testes do Sistema (Versão Simples)</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --panel: #1e293b;
+    --panel-2: #273449;
+    --text: #e2e8f0;
+    --muted: #94a3b8;
+    --accent: #38bdf8;
+    --pass: #22c55e;
+    --fail: #ef4444;
+    --na: #f59e0b;
+    --border: #334155;
+    --radius: 12px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+  }
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 20px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    justify-content: space-between;
+  }
+  header h1 {
+    font-size: 1.15rem;
+    margin: 0;
+    letter-spacing: .3px;
+  }
+  header h1 span { color: var(--accent); }
+  .progress-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: .85rem;
+    color: var(--muted);
+  }
+  .progress-bar {
+    width: 160px;
+    height: 8px;
+    background: var(--panel-2);
+    border-radius: 99px;
+    overflow: hidden;
+  }
+  .progress-bar > div {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--accent), var(--pass));
+    transition: width .3s ease;
+  }
+  main {
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 20px 16px 140px;
+  }
+  section.card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 18px;
+    overflow: hidden;
+  }
+  section.card > h2 {
+    margin: 0;
+    padding: 14px 18px;
+    font-size: 1rem;
+    background: var(--panel-2);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .intro {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+    margin-bottom: 18px;
+    font-size: .9rem;
+  }
+  .intro h2 { margin: 0 0 8px; font-size: 1rem; color: var(--accent); }
+  .intro ol { margin: 8px 0 0; padding-left: 20px; }
+  .intro li { margin-bottom: 6px; }
+  .intro .tip {
+    margin-top: 10px;
+    padding: 10px 12px;
+    background: rgba(56, 189, 248, .08);
+    border-left: 3px solid var(--accent);
+    border-radius: 6px;
+    font-size: .85rem;
+    color: #cbd5e1;
+  }
+  .case {
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+  }
+  .case:last-child { border-bottom: none; }
+  .case-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+  .case-id {
+    font-family: ui-monospace, monospace;
+    font-size: .78rem;
+    background: var(--panel-2);
+    color: var(--accent);
+    padding: 2px 8px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+  }
+  .case-title { font-weight: 600; font-size: .95rem; }
+  .expected {
+    font-size: .85rem;
+    color: var(--muted);
+    margin: 4px 0 10px;
+  }
+  .expected strong { color: #cbd5e1; }
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+  }
+  .status-group {
+    display: inline-flex;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .status-group button {
+    background: var(--panel-2);
+    color: var(--muted);
+    border: none;
+    padding: 6px 12px;
+    font-size: .78rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .15s, color .15s;
+  }
+  .status-group button + button { border-left: 1px solid var(--border); }
+  .status-group button:hover { background: #334155; color: var(--text); }
+  .status-group button.active.pass { background: var(--pass); color: #052e16; }
+  .status-group button.active.fail { background: var(--fail); color: #450a0a; }
+  .status-group button.active.na   { background: var(--na); color: #451a03; }
+  input.evidence {
+    flex: 1 1 260px;
+    min-width: 180px;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    padding: 7px 10px;
+    font-size: .8rem;
+  }
+  input.evidence::placeholder { color: #64748b; }
+  input.evidence:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .case.s-pass { border-left: 3px solid var(--pass); }
+  .case.s-fail { border-left: 3px solid var(--fail); }
+  .case.s-na   { border-left: 3px solid var(--na); }
+
+  footer.bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(15, 23, 42, .96);
+    backdrop-filter: blur(8px);
+    border-top: 1px solid var(--border);
+    padding: 12px 16px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    justify-content: center;
+    z-index: 20;
+  }
+  button.action {
+    border: none;
+    border-radius: 10px;
+    padding: 10px 18px;
+    font-size: .88rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform .1s, filter .15s;
+  }
+  button.action:active { transform: scale(.97); }
+  button.action.primary {
+    background: linear-gradient(135deg, #0ea5e9, #38bdf8);
+    color: #082f49;
+  }
+  button.action.whats {
+    background: linear-gradient(135deg, #16a34a, #22c55e);
+    color: #052e16;
+  }
+  button.action.ghost {
+    background: var(--panel-2);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+  button.action:hover { filter: brightness(1.08); }
+  .summary-chip {
+    font-size: .8rem;
+    color: var(--muted);
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 99px;
+    padding: 6px 12px;
+  }
+  .summary-chip b.pass { color: var(--pass); }
+  .summary-chip b.fail { color: var(--fail); }
+  .summary-chip b.na   { color: var(--na); }
+
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.6);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    z-index: 50;
+  }
+  .modal-backdrop.open { display: flex; }
+  .modal {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    max-width: 720px;
+    width: 100%;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+  }
+  .modal header {
+    position: static;
+    background: var(--panel-2);
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .modal header h3 { margin: 0; font-size: .95rem; }
+  .modal textarea {
+    flex: 1;
+    width: 100%;
+    min-height: 260px;
+    background: #0b1220;
+    color: #a5f3fc;
+    border: none;
+    border-radius: 0 0 var(--radius) var(--radius);
+    padding: 14px;
+    font-family: ui-monospace, monospace;
+    font-size: .78rem;
+    resize: vertical;
+  }
+  .modal .modal-actions {
+    display: flex;
+    gap: 8px;
+    padding: 12px 16px;
+    border-top: 1px solid var(--border);
+    justify-content: flex-end;
+    flex-wrap: wrap;
+  }
+  .toast {
+    position: fixed;
+    bottom: 76px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--pass);
+    color: #052e16;
+    font-weight: 700;
+    padding: 10px 20px;
+    border-radius: 10px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .25s, transform .25s;
+    z-index: 60;
+    font-size: .85rem;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  @media (max-width: 600px) {
+    .progress-bar { width: 90px; }
+    header h1 { font-size: 1rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Vision Flow <span>· Testes do Sistema</span></h1>
+  <div class="progress-wrap">
+    <div class="progress-bar"><div id="progressFill"></div></div>
+    <span id="progressText">0/0</span>
+  </div>
+</header>
+
+<main id="main"></main>
+
+<footer class="bar">
+  <span class="summary-chip">
+    <b class="pass" id="sumPass">0 OK</b> ·
+    <b class="fail" id="sumFail">0 COM PROBLEMA</b> ·
+    <b class="na" id="sumNa">0 NÃO SE APLICA</b>
+  </span>
+  <button class="action ghost" id="btnReset">Apagar tudo</button>
+  <button class="action primary" id="btnJson">Gerar relatório</button>
+  <button class="action whats" id="btnWhats">Enviar pelo WhatsApp</button>
+</footer>
+
+<div class="modal-backdrop" id="modal">
+  <div class="modal">
+    <header><h3>Relatório dos testes (texto para copiar)</h3></header>
+    <textarea id="jsonOut" readonly></textarea>
+    <div class="modal-actions">
+      <button class="action ghost" id="btnCopy">Copiar</button>
+      <button class="action ghost" id="btnDownload">Baixar arquivo</button>
+      <button class="action primary" id="btnClose">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* =========================================================
+   PLANO — títulos e passos em linguagem simples
+   ========================================================= */
+const PLAN = [
+  { section: "1. Entrar no sistema (login)", cases: [
+    { id: "AUTH-01", title: "Entrar com internet funcionando",
+      steps: "Abra o sistema e faça login com um usuário e senha válidos. Deve entrar normalmente na tela inicial." },
+    { id: "AUTH-02", title: "Tentar entrar com senha errada",
+      steps: "Digite um usuário ou senha incorretos. O sistema deve mostrar uma mensagem de erro clara e não deixar entrar." },
+    { id: "AUTH-03", title: "Sessão vencida com internet",
+      steps: "Deixe o sistema parado por muito tempo (ou force a expiração). Ao usar de novo, deve pedir para entrar novamente." },
+    { id: "AUTH-04", title: "Internet cair durante o login",
+      steps: "Comece a fazer login e desligue a internet no meio. O sistema deve avisar que está sem conexão, sem travar." },
+    { id: "AUTH-05", title: "Sessão vencer enquanto está sem internet",
+      steps: "Fique sem internet, use o sistema e aguarde a sessão vencer. Ao voltar a internet, deve pedir login de novo sem perder o que já foi feito." }
+  ]},
+  { section: "2. Navegar pelo sistema", cases: [
+    { id: "NAV-01", title: "Trocar de tela várias vezes (Clientes, Pedidos, Orçamentos)",
+      steps: "Fique alternando entre as telas de Clientes, Pedidos e Orçamentos rapidamente. Não deve travar nem mostrar informação errada." },
+    { id: "NAV-02", title: "Tela carregando e tela vazia",
+      steps: "Ao abrir uma lista, deve aparecer um aviso de 'carregando'. Se não houver itens, deve aparecer uma mensagem dizendo que está vazio." },
+    { id: "NAV-03", title: "Usar filtros, voltar e girar o celular",
+      steps: "Aplique filtros nas listas, volte para a tela anterior e gire o celular. Tudo deve continuar funcionando e legível." }
+  ]},
+  { section: "3. Clientes (cadastro e consulta)", cases: [
+    { id: "CLI-01", title: "Cadastrar um cliente com internet",
+      steps: "Cadastre um cliente novo com todos os dados. Deve salvar e aparecer na lista." },
+    { id: "CLI-02", title: "Editar um cliente com internet",
+      steps: "Abra um cliente já cadastrado, mude algum dado e salve. A alteração deve aparecer na lista." },
+    { id: "CLI-03", title: "Excluir um cliente com internet",
+      steps: "Exclua um cliente. Deve pedir confirmação e sumir da lista." },
+    { id: "CLI-04", title: "Buscar CNPJ com internet (com e sem dados salvos)",
+      steps: "Digite um CNPJ. O sistema deve preencher os dados sozinho. Faça de novo com o mesmo CNPJ: deve ser mais rápido (já guardado)." },
+    { id: "CLI-05", title: "Buscar CNPJ sem internet",
+      steps: "Sem internet, digite um CNPJ já consultado antes (deve preencher) e um CNPJ novo (deve avisar que não dá para buscar agora)." },
+    { id: "CLI-06", title: "Cadastrar endereço com e sem internet",
+      steps: "Adicione um endereço ao cliente com internet e depois sem internet. Deve funcionar nos dois casos." },
+    { id: "CLI-07", title: "Cadastrar, editar e excluir cliente sem internet",
+      steps: "Sem internet, faça as três ações. O sistema deve guardar tudo e mostrar que está pendente de envio." },
+    { id: "CLI-08", title: "Cliente pendente subir quando a internet voltar",
+      steps: "Cadastre um cliente sem internet, depois ligue a internet. O cliente deve ser enviado sozinho e sair da lista de pendentes." }
+  ]},
+  { section: "4. Pedidos e Orçamentos", cases: [
+    { id: "PED-01", title: "Criar Pedido e Orçamento com internet",
+      steps: "Crie um pedido e um orçamento com internet. Os dois devem salvar e aparecer nas listas." },
+    { id: "PED-02", title: "Ver lista de produtos com e sem internet",
+      steps: "Abra o catálogo de produtos com internet e depois sem internet. Deve mostrar os produtos nos dois casos (se já tiver aberto antes)." },
+    { id: "PED-03", title: "Criar Pedido sem internet",
+      steps: "Sem internet, crie um pedido. Deve salvar e ficar marcado como pendente de envio." },
+    { id: "PED-04", title: "Editar Pedido com e sem internet",
+      steps: "Edite um pedido nos dois casos. A alteração deve aparecer e, sem internet, ficar pendente." },
+    { id: "PED-05", title: "Duas pessoas editando o mesmo pedido",
+      steps: "Edite o mesmo pedido em dois aparelhos diferentes. O sistema deve ficar com a alteração mais recente e avisar sobre o conflito." },
+    { id: "PED-06", title: "Excluir Pedido sem internet",
+      steps: "Sem internet, exclua um pedido. Deve sumir da lista e ficar pendente de envio." }
+  ]},
+  { section: "5. Envio automático dos dados (sincronização)", cases: [
+    { id: "SYNC-01", title: "Várias ações sem internet e envio na ordem certa",
+      steps: "Sem internet, faça várias ações (cadastros, edições). Ao voltar a internet, devem ser enviadas na mesma ordem em que foram feitas." },
+    { id: "SYNC-02", title: "Servidor com problema: tentar de novo",
+      steps: "Simule uma falha do servidor. O sistema deve continuar tentando enviar e não perder os dados." },
+    { id: "SYNC-03", title: "Dado inválido: avisar e tirar da fila",
+      steps: "Envie um dado inválido. O sistema deve avisar o erro e tirar aquele item da fila, sem travar os outros." },
+    { id: "SYNC-04", title: "Fechar o app, usar em dois aparelhos e sessão vencida",
+      steps: "Feche e abra o app durante o envio; use em dois aparelhos ao mesmo tempo; e teste com a sessão vencida. Tudo deve continuar funcionando sem perder dados." }
+  ]},
+  { section: "6. Instalar como aplicativo no celular", cases: [
+    { id: "PWA-01", title: "Instalar no Android e no iPhone",
+      steps: "Instale o sistema como aplicativo no celular. Deve abrir como um app normal, com ícone na tela inicial." },
+    { id: "PWA-02", title: "Abrir o app sem internet depois de fechar",
+      steps: "Feche o app, desligue a internet e abra de novo. Deve abrir pelo menos a tela inicial." },
+    { id: "PWA-03", title: "O app não deve guardar respostas do servidor por engano",
+      steps: "Use o app normalmente. As informações que vêm do servidor devem ser sempre atualizadas, não presas em uma versão antiga." }
+  ]}
+];
+
+const STORAGE_KEY = "visionflow_qa_simples_v1";
+
+/* =========================================================
+   ESTADO — status em maiúsculo: "PASS" | "FAIL" | "N/A" | null
+   ========================================================= */
+let state = loadState();
+
+function blankState() {
+  const s = { meta: { startedAt: new Date().toISOString(), qa: "", build: "" }, cases: {} };
+  PLAN.forEach(sec => sec.cases.forEach(c => {
+    s.cases[c.id] = { status: null, evidence: "" };
+  }));
+  return s;
+}
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return blankState();
+    const s = JSON.parse(raw);
+    if (!s.meta) s.meta = { startedAt: new Date().toISOString(), qa: "", build: "" };
+    if (!s.cases) s.cases = {};
+    PLAN.forEach(sec => sec.cases.forEach(c => {
+      if (!s.cases[c.id]) s.cases[c.id] = { status: null, evidence: "" };
+    }));
+    return s;
+  } catch (e) {
+    return blankState();
+  }
+}
+
+function saveState() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
+}
+
+/* =========================================================
+   CONTAGEM
+   ========================================================= */
+function countResults() {
+  let pass = 0, fail = 0, na = 0, pending = 0;
+  PLAN.forEach(sec => sec.cases.forEach(c => {
+    const st = state.cases[c.id] ? state.cases[c.id].status : null;
+    if (st === "PASS") pass++;
+    else if (st === "FAIL") fail++;
+    else if (st === "N/A") na++;
+    else pending++;
+  }));
+  return { pass, fail, na, pending, total: pass + fail + na + pending };
+}
+
+/* =========================================================
+   RENDER
+   ========================================================= */
+const main = document.getElementById("main");
+
+function render() {
+  main.innerHTML = "";
+
+  // Instruções
+  const intro = document.createElement("div");
+  intro.className = "intro";
+  intro.innerHTML = `
+    <h2>Como fazer os testes</h2>
+    <ol>
+      <li>Leia o que precisa ser feito em cada item (a linha cinza abaixo do título).</li>
+      <li>Faça exatamente o que está escrito no sistema.</li>
+      <li>Marque uma das opções:
+        <b style="color:var(--pass)">Deu certo</b>,
+        <b style="color:var(--fail)">Deu errado</b> ou
+        <b style="color:var(--na)">Não se aplica</b>.</li>
+      <li>Se deu errado, escreva no campo ao lado o que aconteceu (o que você viu, mensagem de erro, etc.).</li>
+      <li>No final, clique em <b>Gerar relatório</b> ou <b>Enviar pelo WhatsApp</b>.</li>
+    </ol>
+    <div class="tip">
+      Dica: você pode fechar e abrir esta página sem perder o que já marcou. Tudo fica salvo neste aparelho.
+    </div>
+  `;
+  main.appendChild(intro);
+
+  // Identificação
+  const metaCard = document.createElement("section");
+  metaCard.className = "card";
+  metaCard.innerHTML = `
+    <h2>Quem está testando</h2>
+    <div style="padding:14px 18px; display:flex; flex-wrap:wrap; gap:12px;">
+      <label style="flex:1 1 220px; font-size:.85rem; color:var(--muted);">
+        Seu nome
+        <input id="metaQa" type="text" value="${escapeHtml(state.meta.qa || "")}"
+          placeholder="Digite seu nome"
+          style="display:block; width:100%; margin-top:4px; background:var(--panel-2); border:1px solid var(--border); border-radius:8px; color:var(--text); padding:7px 10px; font-size:.85rem;">
+      </label>
+      <label style="flex:1 1 220px; font-size:.85rem; color:var(--muted);">
+        Versão do sistema (se souber)
+        <input id="metaBuild" type="text" value="${escapeHtml(state.meta.build || "")}"
+          placeholder="ex.: 2026.10.26"
+          style="display:block; width:100%; margin-top:4px; background:var(--panel-2); border:1px solid var(--border); border-radius:8px; color:var(--text); padding:7px 10px; font-size:.85rem;">
+      </label>
+    </div>
+  `;
+  main.appendChild(metaCard);
+  metaCard.querySelector("#metaQa").addEventListener("input", e => {
+    state.meta.qa = e.target.value; saveState();
+  });
+  metaCard.querySelector("#metaBuild").addEventListener("input", e => {
+    state.meta.build = e.target.value; saveState();
+  });
+
+  // Casos
+  PLAN.forEach(sec => {
+    const sectionEl = document.createElement("section");
+    sectionEl.className = "card";
+    const h2 = document.createElement("h2");
+    h2.textContent = sec.section;
+    sectionEl.appendChild(h2);
+
+    sec.cases.forEach(c => {
+      const st = state.cases[c.id];
+      const caseEl = document.createElement("div");
+      caseEl.className = "case" + (st.status ? " s-" + st.status.toLowerCase().replace("/", "") : "");
+      caseEl.dataset.caseId = c.id;
+
+      const head = document.createElement("div");
+      head.className = "case-head";
+      head.innerHTML = `<span class="case-id">${c.id}</span><span class="case-title">${escapeHtml(c.title)}</span>`;
+      caseEl.appendChild(head);
+
+      if (c.steps) {
+        const exp = document.createElement("div");
+        exp.className = "expected";
+        exp.innerHTML = `<strong>O que fazer:</strong> ${escapeHtml(c.steps)}`;
+        caseEl.appendChild(exp);
+      }
+
+      const controls = document.createElement("div");
+      controls.className = "controls";
+
+      const group = document.createElement("div");
+      group.className = "status-group";
+      [
+        { key: "PASS", cls: "pass", label: "Deu certo" },
+        { key: "FAIL", cls: "fail", label: "Deu errado" },
+        { key: "N/A", cls: "na", label: "Não se aplica" }
+      ].forEach(({ key, cls, label }) => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.textContent = label;
+        b.dataset.status = key;
+        if (st.status === key) b.classList.add("active", cls);
+        b.addEventListener("click", () => setStatus(c.id, key));
+        group.appendChild(b);
+      });
+      controls.appendChild(group);
+
+      const ev = document.createElement("input");
+      ev.type = "text";
+      ev.className = "evidence";
+      ev.placeholder = "O que aconteceu? (descreva o problema)";
+      ev.value = st.evidence || "";
+      ev.addEventListener("input", () => {
+        state.cases[c.id].evidence = ev.value;
+        saveState();
+      });
+      controls.appendChild(ev);
+
+      caseEl.appendChild(controls);
+      sectionEl.appendChild(caseEl);
+    });
+
+    main.appendChild(sectionEl);
+  });
+
+  updateSummary();
+}
+
+function setStatus(id, status) {
+  if (state.cases[id].status === status) {
+    state.cases[id].status = null;
+  } else {
+    state.cases[id].status = status;
+  }
+  saveState();
+
+  const caseEl = main.querySelector(`[data-case-id="${id}"]`);
+  if (caseEl) {
+    caseEl.classList.remove("s-pass", "s-fail", "s-na");
+    const st = state.cases[id].status;
+    if (st === "PASS") caseEl.classList.add("s-pass");
+    else if (st === "FAIL") caseEl.classList.add("s-fail");
+    else if (st === "N/A") caseEl.classList.add("s-na");
+
+    caseEl.querySelectorAll(".status-group button").forEach(b => {
+      b.classList.remove("active", "pass", "fail", "na");
+      if (b.dataset.status === st) {
+        b.classList.add("active");
+        if (st === "PASS") b.classList.add("pass");
+        if (st === "FAIL") b.classList.add("fail");
+        if (st === "N/A") b.classList.add("na");
+      }
+    });
+  }
+
+  updateSummary();
+}
+
+function updateSummary() {
+  const c = countResults();
+  document.getElementById("sumPass").textContent = c.pass + " OK";
+  document.getElementById("sumFail").textContent = c.fail + " COM PROBLEMA";
+  document.getElementById("sumNa").textContent = c.na + " NÃO SE APLICA";
+  const done = c.pass + c.fail + c.na;
+  document.getElementById("progressText").textContent = done + "/" + c.total;
+  document.getElementById("progressFill").style.width = (c.total ? (done / c.total * 100) : 0) + "%";
+}
+
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
+
+/* =========================================================
+   RELATÓRIO
+   ========================================================= */
+function buildJson() {
+  const c = countResults();
+  const cases = [];
+  PLAN.forEach(sec => sec.cases.forEach(k => {
+    const st = state.cases[k.id];
+    cases.push({
+      id: k.id,
+      secao: sec.section,
+      titulo: k.title,
+      resultado: st.status || "PENDENTE",
+      evidencia: st.evidence || ""
+    });
+  }));
+
+  let veredito = "AINDA_TESTANDO";
+  if (c.pending === 0) {
+    if (c.fail > 0) veredito = "REPROVADO";
+    else if (c.na > 0) veredito = "APROVADO_COM_RESSALVAS";
+    else veredito = "APROVADO";
+  }
+
+  return {
+    plano: "Vision Flow — Testes do Sistema (versão simples)",
+    versaoPlano: "2.0",
+    dataExecucao: new Date().toISOString(),
+    meta: {
+      qa: state.meta.qa || "",
+      build: state.meta.build || "",
+      startedAt: state.meta.startedAt
+    },
+    resumo: {
+      total: c.total,
+      ok: c.pass,
+      comProblema: c.fail,
+      naoSeAplica: c.na,
+      pendentes: c.pending,
+      veredito: veredito
+    },
+    casos: cases
+  };
+}
+
+/* =========================================================
+   WHATSAPP
+   ========================================================= */
+function buildWhatsText(json) {
+  const r = json.resumo;
+  const L = [];
+  L.push("*Vision Flow — Resultado dos Testes*");
+  L.push("Data: " + new Date(json.dataExecucao).toLocaleString("pt-BR"));
+  if (json.meta.build) L.push("Versão: " + json.meta.build);
+  if (json.meta.qa) L.push("Quem testou: " + json.meta.qa);
+  L.push("");
+  L.push("*Resumo:* " + r.total + " testes");
+  L.push("Deu certo: " + r.ok);
+  L.push("Deu errado: " + r.comProblema);
+  L.push("Não se aplica: " + r.naoSeAplica);
+  if (r.pendentes) L.push("Ainda não testados: " + r.pendentes);
+  L.push("Resultado final: *" + traduzVeredito(r.veredito) + "*");
+
+  const falhas = json.casos.filter(c => c.resultado === "FAIL");
+  if (falhas.length) {
+    L.push("");
+    L.push("*O que deu errado:*");
+    falhas.forEach(c => {
+      L.push("- " + c.id + " — " + c.titulo);
+      if (c.evidencia) L.push("  O que aconteceu: " + c.evidencia);
+    });
+  }
+
+  const pend = json.casos.filter(c => c.resultado === "PENDENTE");
+  if (pend.length) {
+    L.push("");
+    L.push("*Ainda não testados:* " + pend.map(c => c.id).join(", "));
+  }
+
+  L.push("");
+  L.push("*Detalhes completos (não apague):*");
+  L.push(JSON.stringify(json));
+
+  return L.join("\n");
+}
+
+function traduzVeredito(v) {
+  if (v === "APROVADO") return "APROVADO ✅";
+  if (v === "REPROVADO") return "REPROVADO ❌";
+  if (v === "APROVADO_COM_RESSALVAS") return "APROVADO COM RESSALVAS ⚠️";
+  return "AINDA TESTANDO ⏳";
+}
+
+/* =========================================================
+   MODAL / AÇÕES
+   ========================================================= */
+function showModal(json) {
+  document.getElementById("jsonOut").value = JSON.stringify(json, null, 2);
+  document.getElementById("modal").classList.add("open");
+}
+
+document.getElementById("btnJson").addEventListener("click", () => showModal(buildJson()));
+
+document.getElementById("btnClose").addEventListener("click", () => {
+  document.getElementById("modal").classList.remove("open");
+});
+
+document.getElementById("modal").addEventListener("click", (e) => {
+  if (e.target.id === "modal") document.getElementById("modal").classList.remove("open");
+});
+
+document.getElementById("btnCopy").addEventListener("click", async () => {
+  const ta = document.getElementById("jsonOut");
+  try {
+    await navigator.clipboard.writeText(ta.value);
+    toast("Relatório copiado!");
+  } catch (e) {
+    ta.select();
+    document.execCommand("copy");
+    toast("Relatório copiado!");
+  }
+});
+
+document.getElementById("btnDownload").addEventListener("click", () => {
+  const json = buildJson();
+  const blob = new Blob([JSON.stringify(json, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "testes-visionflow-" + new Date().toISOString().slice(0, 10) + ".json";
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+document.getElementById("btnWhats").addEventListener("click", () => {
+  const json = buildJson();
+  const texto = buildWhatsText(json);
+  const url = "https://wa.me/?text=" + encodeURIComponent(texto);
+  if (url.length > 8000) {
+    toast("O texto ficou grande — use 'Gerar relatório' e baixe o arquivo.");
+  }
+  window.open(url, "_blank");
+});
+
+document.getElementById("btnReset").addEventListener("click", () => {
+  if (!confirm("Tem certeza que quer apagar tudo o que foi marcado?")) return;
+  state = blankState();
+  saveState();
+  render();
+  toast("Tudo apagado");
+});
+
+let toastTimer;
+function toast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove("show"), 2200);
+}
+
+/* =========================================================
+   INIT
+   ========================================================= */
+render();
+</script>
+</body>
+</html>

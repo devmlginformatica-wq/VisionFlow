@@ -7,5 +7,5 @@ export interface PedidoRepository {
     getById(id: number | string, type: PedidoTipo): Promise<Pedido | null>
     save(pedido: Pedido): Promise<Pedido>
     delete(id: number | string): Promise<void>
-    getCustomerAddresses(customerId: number): Promise<Endereco[]>
+    getCustomerAddresses(customerId: number | string): Promise<Endereco[]>
 }

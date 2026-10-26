@@ -248,7 +248,8 @@ export class ApiClienteDatasource implements ClienteRepository {
         return clients
     }
 
-    async getById(id: number): Promise<Cliente | null> {
+    async getById(id: number | string): Promise<Cliente | null> {
+        if (typeof id !== 'number') return null
         try {
             const response = await apiRequest<ApiClienteRow>(`/clientes/${id}`)
             return mapClient(response)
@@ -319,7 +320,10 @@ export class ApiClienteDatasource implements ClienteRepository {
         return savedClient
     }
 
-    async delete(id: number): Promise<void> {
+    async delete(id: number | string): Promise<void> {
+        if (typeof id !== 'number') {
+            throw new Error(`Cannot delete a cliente with non-numeric API id: ${id}`)
+        }
         await apiRequest<void>(`/clientes/${id}`, { method: 'DELETE' })
     }
 

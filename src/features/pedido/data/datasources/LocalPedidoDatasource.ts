@@ -63,7 +63,10 @@ export class LocalPedidoDatasource {
         await this.mergeCatalog(db.catalogo_produtos, items)
     }
 
-    async getCustomerAddresses(customerId: number): Promise<Endereco[]> {
+    async getCustomerAddresses(customerId: number | string): Promise<Endereco[]> {
+        if (typeof customerId === 'string') {
+            return (await db.clientes.get(customerId))?.data?.addresses ?? []
+        }
         const stored = await db.customer_addresses.get(customerId)
         if (stored) return stored.data
         const customer = await db.clientes.get(customerId)

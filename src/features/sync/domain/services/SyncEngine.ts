@@ -113,10 +113,54 @@ export class SyncEngine {
             return this.pedidoApiPayload(payload as SyncRecord)
         }
 
-        const localOnlyFields = new Set(['id', 'updated_at', 'syncStatus'])
-        return Object.fromEntries(
-            Object.entries(payload as SyncRecord).filter(([key]) => !localOnlyFields.has(key)),
-        )
+        return this.clienteApiPayload(payload as SyncRecord)
+    }
+
+    private clienteApiPayload(payload: SyncRecord): SyncRecord {
+        const addresses = payload.addresses
+        if (!Array.isArray(addresses)) {
+            throw new Error('Cliente sync payload must contain an addresses array.')
+        }
+
+        const addressValue = addresses.find((address) =>
+            typeof address === 'object' && address !== null && !Array.isArray(address)
+            && (address as SyncRecord).purpose === 'principal',
+        ) ?? addresses[0]
+        const address = typeof addressValue === 'object' && addressValue !== null && !Array.isArray(addressValue)
+            ? addressValue as SyncRecord
+            : {}
+        const lastVisit = payload.lastVisit
+
+        return {
+            nome_razao_social: this.stringValue(payload.name),
+            nome_fantasia: this.stringValue(payload.tradeName),
+            cnpj_cpf: this.stringValue(payload.taxId),
+            inscricao_estadual_rg: this.stringValue(payload.stateRegistration),
+            tipo_pessoa: this.requiredString(payload.personType, 'cliente.personType'),
+            prospect: this.booleanValue(payload.prospect, 'cliente.prospect'),
+            telefone1: this.stringValue(payload.commercialPhone),
+            telefone2: this.stringValue(payload.otherPhone),
+            celular: this.stringValue(payload.mobilePhone),
+            nome_contato_comprador: this.stringValue(payload.buyerContact),
+            email_contato_comprador: this.stringValue(payload.buyerEmail),
+            nome_contato_faturamento: this.stringValue(payload.billingContact),
+            email_contato_faturamento: this.stringValue(payload.invoiceEmail),
+            limite_credito_total: this.numberValue(payload.creditLimit, 'cliente.creditLimit'),
+            anotacao_erp: this.stringValue(payload.erpNotes),
+            transportadora_padrao_id: this.nullableNumber(payload.carrierId, 'cliente.carrierId'),
+            condicao_pagamento_padrao_id: this.nullableNumber(payload.paymentConditionId, 'cliente.paymentConditionId'),
+            forma_pagamento_padrao_id: this.nullableNumber(payload.paymentMethodId, 'cliente.paymentMethodId'),
+            tabela_preco_padrao_id: this.nullableNumber(payload.priceTableId, 'cliente.priceTableId'),
+            data_ultima_visita: typeof lastVisit === 'string' && lastVisit.length > 0 ? lastVisit : null,
+            anotacao_usuario: this.stringValue(payload.userNotes),
+            cep: this.stringValue(address.zipCode),
+            logradouro: this.stringValue(address.street),
+            numero_endereco: this.stringValue(address.number),
+            complemento: this.stringValue(address.complement),
+            bairro: this.stringValue(address.district),
+            cidade: this.stringValue(address.city),
+            estado: this.stringValue(address.state),
+        }
     }
 
     private pedidoApiPayload(payload: SyncRecord): SyncRecord {
@@ -173,6 +217,13 @@ export class SyncEngine {
 
     private stringValue(value: unknown): string {
         return typeof value === 'string' ? value : ''
+    }
+
+    private booleanValue(value: unknown, label: string): boolean {
+        if (typeof value !== 'boolean') {
+            throw new Error(`Invalid ${label} in sync payload.`)
+        }
+        return value
     }
 
     private numberValue(value: unknown, label: string): number {

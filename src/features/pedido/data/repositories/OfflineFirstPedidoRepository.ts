@@ -106,7 +106,10 @@ export class OfflineFirstPedidoRepository implements PedidoRepository {
         this.dispatchSync()
     }
 
-    async getCustomerAddresses(customerId: number): Promise<Endereco[]> {
+    async getCustomerAddresses(customerId: number | string): Promise<Endereco[]> {
+        if (typeof customerId === 'string') {
+            return this.localDatasource.getCustomerAddresses(customerId)
+        }
         if (!this.isOnline()) {
             return this.localDatasource.getCustomerAddresses(customerId)
         }

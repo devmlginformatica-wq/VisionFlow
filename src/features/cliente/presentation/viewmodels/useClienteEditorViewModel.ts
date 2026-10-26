@@ -50,7 +50,7 @@ export interface ClienteEditorViewModel {
     retry: () => void
 }
 
-export function useClienteEditorViewModel(clientId: number | null): ClienteEditorViewModel {
+export function useClienteEditorViewModel(clientId: number | string | null): ClienteEditorViewModel {
     const location = useLocation()
     const navigate = useNavigate()
     const [cliente, setCliente] = useState<Cliente>(emptyClient)
@@ -97,7 +97,9 @@ export function useClienteEditorViewModel(clientId: number | null): ClienteEdito
                     setError('Cliente não encontrado.')
                     return
                 }
-                const titles = await clienteRepository.getContasReceber(clientId)
+                const titles = typeof clientId === 'number' && navigator.onLine
+                    ? await clienteRepository.getContasReceber(clientId)
+                    : []
                 if (!active) return
                 setCliente({ ...loadedClient, titles })
             } catch (loadError: unknown) {
@@ -121,6 +123,8 @@ export function useClienteEditorViewModel(clientId: number | null): ClienteEdito
         try {
             const saved = await clienteRepository.save({
                 ...values,
+                id: cliente.id,
+                localId: cliente.localId,
                 legalName: values.legalName || values.name,
             })
             if (finalize) {

@@ -17,7 +17,7 @@ export const pedidoSchema = z.object({
     issueDate: z.string().min(1, 'Informe a data de emissão.'),
     deliveryDate: z.string(),
     companyId: z.number().nullable(),
-    customerId: z.number().nullable(),
+    customerId: z.union([z.number(), z.string()]).nullable(),
     customerName: z.string(),
     customerTaxId: z.string(),
     paymentConditionId: z.number().nullable(),
@@ -25,14 +25,7 @@ export const pedidoSchema = z.object({
     carrierId: z.number().nullable(),
     billingAddressId: z.number().nullable(),
     deliveryAddressId: z.number().nullable(),
-    collectionAddressId: z.number().int().positive().nullable().superRefine((value, context) => {
-        if (value === null) {
-            context.addIssue({
-                code: 'custom',
-                message: 'Selecione um endereço de cobrança.',
-            })
-        }
-    }),
+    collectionAddressId: z.number().int().positive().nullable(),
     freightAmount: z.number().min(0, 'O frete não pode ser negativo.'),
     observation: z.string(),
     invoiceObservation: z.string(),

@@ -4,9 +4,9 @@ import type { Titulo } from '../entities/Titulo'
 
 export interface ClienteRepository {
     list(options?: { busca?: string; limit?: number }): Promise<Cliente[]>
-    getById(id: number): Promise<Cliente | null>
+    getById(id: number | string): Promise<Cliente | null>
     save(cliente: Cliente): Promise<Cliente>
-    delete(id: number): Promise<void>
+    delete(id: number | string): Promise<void>
     lookupTaxId(taxId: string): Promise<CnpjLookup>
     getAddresses(clientId: number | null): Promise<Endereco[]>
     saveAddress(clientId: number | null, address: EnderecoInput): Promise<Endereco>

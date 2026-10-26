@@ -13,12 +13,14 @@ import { useEnderecoViewModel } from '../viewmodels/useEnderecoViewModel'
 
 export function ClienteEditorPage(): React.JSX.Element {
     const { id } = useParams()
-    const clientId = id && id !== 'novo' ? Number(id) : null
+    const clientId: number | string | null = id && id !== 'novo'
+        ? (/^\d+$/.test(id) ? Number(id) : id)
+        : null
     const viewModel = useClienteEditorViewModel(clientId)
-    const enderecoViewModel = useEnderecoViewModel(clientId)
+    const enderecoViewModel = useEnderecoViewModel(typeof clientId === 'number' ? clientId : null)
     const form = useForm<ClienteFormValues>({ resolver: zodResolver(clienteSchema), defaultValues: viewModel.cliente })
     const { reset } = form
-    const initializedClient = useRef<number | null | undefined>(undefined)
+    const initializedClient = useRef<number | string | null | undefined>(undefined)
 
     useEffect(() => {
         if (!viewModel.loading && initializedClient.current !== clientId) {

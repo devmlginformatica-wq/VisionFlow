@@ -39,7 +39,7 @@ export class ApiPedidoRepository implements PedidoRepository {
         await this.offlineRepository.delete(Number(id) || id)
     }
 
-    async getCustomerAddresses(customerId: number): Promise<Endereco[]> {
+    async getCustomerAddresses(customerId: number | string): Promise<Endereco[]> {
         return this.offlineRepository.getCustomerAddresses(customerId)
     }
 

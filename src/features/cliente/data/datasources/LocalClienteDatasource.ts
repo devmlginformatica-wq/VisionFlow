@@ -69,6 +69,7 @@ export class LocalClienteDatasource {
         return {
             ...data,
             id: typeof record.id === 'number' ? record.id : null,
+            localId: typeof record.id === 'string' ? record.id : undefined,
             updated_at: record.updated_at,
             syncStatus: record.syncStatus,
         }
@@ -86,6 +87,7 @@ export class LocalClienteDatasource {
         return {
             ...record.data,
             id: typeof record.id === 'number' ? record.id : null,
+            localId: typeof record.id === 'string' ? record.id : undefined,
             updated_at: record.updated_at,
             syncStatus: record.syncStatus,
         }
