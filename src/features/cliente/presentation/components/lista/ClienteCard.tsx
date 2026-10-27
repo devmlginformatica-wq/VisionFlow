@@ -28,7 +28,7 @@ export function ClienteCard({ cliente, listSearch, onDelete }: ClienteCardProps)
                     <span className="rounded-full bg-[var(--color-canvas)] px-2 py-1 text-[11px] text-[var(--color-muted)]">{cliente.openedAt}</span>
                     <span className="rounded-full bg-[var(--color-primary-soft)] px-2 py-1 text-[11px] font-medium text-[var(--color-primary)]">{cliente.registrationStatus === 'em_digitacao' ? clienteStrings.statusDraft : statusLabel}</span>
                     {cliente.status === 'bloqueado' && <span className="rounded-full bg-[var(--color-danger-soft)] px-2 py-1 text-[11px] font-medium text-[var(--color-danger)]">{clienteStrings.blocked}</span>}
-                    <SyncStatusBadge syncStatus={cliente.syncStatus} />
+                    <SyncStatusBadge syncStatus={cliente.syncStatus} syncError={cliente.syncError} />
                 </div>
                 <ClienteCardIdentity taxId={cliente.taxId} addressSummary={cliente.addressSummary} clientId={cliente.id} />
                 {expanded && <ClienteCardDetalhes cliente={cliente} />}

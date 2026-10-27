@@ -33,7 +33,7 @@ export class DexieSyncQueueRepository implements SyncQueueRepository {
         await this.datasource.markEntitySynced(entity, entityId)
     }
 
-    async markEntityError(entity: SyncEntity, entityId: number | string): Promise<void> {
-        await this.datasource.markEntityError(entity, entityId)
+    async markEntityError(entity: SyncEntity, entityId: number | string, message: string): Promise<void> {
+        await this.datasource.markEntityError(entity, entityId, message)
     }
 }

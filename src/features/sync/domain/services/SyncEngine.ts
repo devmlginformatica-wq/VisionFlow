@@ -44,7 +44,7 @@ export class SyncEngine {
                     }
 
                     if (error instanceof SyncTransportError && error.isClientError) {
-                        await this.queueRepository.markEntityError(operation.entity, operation.entityId)
+                        await this.queueRepository.markEntityError(operation.entity, operation.entityId, message)
                         await this.queueRepository.remove(operation.id)
                         logger.error(`Sync operation ${operation.id} rejected: ${message}`)
                         continue

@@ -8,5 +8,5 @@ export interface SyncQueueRepository {
     updateAttempts(id: string, attempts: number, lastError?: string | null): Promise<void>
     remapEntityId(entity: SyncEntity, oldId: number | string, newId: number | string): Promise<void>
     markEntitySynced(entity: SyncEntity, entityId: number | string): Promise<void>
-    markEntityError(entity: SyncEntity, entityId: number | string): Promise<void>
+    markEntityError(entity: SyncEntity, entityId: number | string, message: string): Promise<void>
 }

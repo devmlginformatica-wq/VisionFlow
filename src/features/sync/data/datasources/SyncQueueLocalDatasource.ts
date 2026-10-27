@@ -119,7 +119,7 @@ export class SyncQueueLocalDatasource {
         })
     }
 
-    async markEntityError(entity: 'cliente' | 'pedido', entityId: number | string): Promise<void> {
+    async markEntityError(entity: 'cliente' | 'pedido', entityId: number | string, message: string): Promise<void> {
         if (
             (typeof entityId === 'number' && (!Number.isSafeInteger(entityId) || entityId <= 0)) ||
             (typeof entityId === 'string' && entityId.trim().length === 0)
@@ -128,9 +128,22 @@ export class SyncQueueLocalDatasource {
             return
         }
 
-        const updated = entity === 'cliente'
-            ? await db.clientes.update(entityId, { syncStatus: 'error' })
-            : await db.pedidos.update(entityId, { syncStatus: 'error' })
+        let updated: number
+        if (entity === 'cliente') {
+            const client = await db.clientes.get(entityId)
+            if (!client) {
+                logger.warn(`Local ${entity} not found when marking sync error: ${entityId}`)
+                return
+            }
+            updated = await db.clientes.update(entityId, {
+                syncStatus: 'error',
+                data: client.data
+                    ? { ...client.data, syncStatus: 'error', syncError: message }
+                    : undefined,
+            })
+        } else {
+            updated = await db.pedidos.update(entityId, { syncStatus: 'error' })
+        }
 
         if (updated === 0) {
             logger.warn(`Local ${entity} not found when marking sync error: ${entityId}`)
@@ -146,9 +159,22 @@ export class SyncQueueLocalDatasource {
             return
         }
 
-        const updated = entity === 'cliente'
-            ? await db.clientes.update(entityId, { syncStatus: 'synced' })
-            : await db.pedidos.update(entityId, { syncStatus: 'synced' })
+        let updated: number
+        if (entity === 'cliente') {
+            const client = await db.clientes.get(entityId)
+            if (!client) {
+                logger.warn(`Local ${entity} not found when marking sync success: ${entityId}`)
+                return
+            }
+            updated = await db.clientes.update(entityId, {
+                syncStatus: 'synced',
+                data: client.data
+                    ? { ...client.data, syncStatus: 'synced', syncError: null }
+                    : undefined,
+            })
+        } else {
+            updated = await db.pedidos.update(entityId, { syncStatus: 'synced' })
+        }
 
         if (updated === 0) {
             logger.warn(`Local ${entity} not found when marking sync success: ${entityId}`)

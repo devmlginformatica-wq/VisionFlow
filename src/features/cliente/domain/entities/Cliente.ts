@@ -6,6 +6,7 @@ export interface Cliente {
     localId?: string
     updated_at?: string
     syncStatus?: 'synced' | 'pending' | 'error'
+    syncError?: string | null
     name: string
     legalName: string
     tradeName: string

@@ -50,8 +50,16 @@ export class OfflineFirstClienteRepository implements ClienteRepository {
             throw new Error('Could not assign a local id to the cliente.')
         }
 
+        const taxIdDigits = cliente.taxId.replace(/\D/g, '')
+        const personType = taxIdDigits.length === 11
+            ? 'PF'
+            : taxIdDigits.length === 14
+                ? 'PJ'
+                : cliente.personType
         const localClient = await this.localDatasource.save({
             ...cliente,
+            personType,
+            syncError: null,
             updated_at: now,
             syncStatus: 'pending',
         }, 'pending', id)

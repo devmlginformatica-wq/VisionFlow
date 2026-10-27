@@ -51,10 +51,9 @@ export class ApiSyncDatasource implements SyncTransport {
         const responseBody = this.parseResponse(responseText, response.status)
 
         if (!response.ok) {
-            const envelope = this.asEnvelope<unknown>(responseBody)
             throw new SyncTransportError(
                 response.status,
-                envelope?.error?.message ?? `Sync request failed with HTTP ${response.status}.`,
+                this.errorMessage(responseBody) ?? `Sync request failed with HTTP ${response.status}.`,
             )
         }
 
@@ -63,10 +62,26 @@ export class ApiSyncDatasource implements SyncTransport {
             throw new Error('Sync API response does not match the expected envelope.')
         }
         if (!envelope.success) {
-            throw new SyncTransportError(500, envelope.error?.message ?? 'Sync API returned an unsuccessful response.')
+            throw new SyncTransportError(
+                500,
+                this.errorMessage(responseBody) ?? 'Sync API returned an unsuccessful response.',
+            )
         }
 
         return envelope.data
+    }
+
+    private errorMessage(value: unknown): string | null {
+        if (typeof value !== 'object' || value === null || !('error' in value)) {
+            return null
+        }
+
+        const error = value.error
+        if (typeof error !== 'object' || error === null || !('message' in error)) {
+            return null
+        }
+
+        return typeof error.message === 'string' ? error.message : null
     }
 
     private parseResponse(text: string, status: number): unknown {

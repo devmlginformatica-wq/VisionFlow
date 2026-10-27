@@ -61,8 +61,6 @@ export function SearchableSelect({
     const listboxId = `${id}-options`
     const selectedOption = options.find((option) => option.value === value)
     const filteredOptions = useMemo(() => {
-        if (onSearch) return options
-
         const normalizedQuery = normalizeSearch(query)
         if (!normalizedQuery) return options
 
@@ -70,7 +68,7 @@ export function SearchableSelect({
             [option.label, option.value, ...(option.searchTerms ?? [])]
                 .some((term) => normalizeSearch(term).includes(normalizedQuery)),
         )
-    }, [onSearch, options, query])
+    }, [options, query])
 
     useEffect(() => {
         if (!open || !onSearch) return

@@ -3,6 +3,8 @@ import { clienteStrings } from '../../cliente.constants'
 
 interface ClienteEditorTabsProps {
     children: React.ReactNode
+    value: string
+    onValueChange: (value: string) => void
 }
 
 const tabs = [
@@ -13,9 +15,9 @@ const tabs = [
     { value: 'other', label: clienteStrings.other },
 ]
 
-export function ClienteEditorTabs({ children }: ClienteEditorTabsProps): React.JSX.Element {
+export function ClienteEditorTabs({ children, value, onValueChange }: ClienteEditorTabsProps): React.JSX.Element {
     return (
-        <Tabs.Root defaultValue="general" className="mt-4">
+        <Tabs.Root value={value} onValueChange={onValueChange} className="mt-4">
             <Tabs.List aria-label="Seções do cadastro de cliente" className="flex gap-1 overflow-x-auto border-b border-[var(--color-border)]">
                 {tabs.map((tab) => <Tabs.Trigger key={tab.value} value={tab.value} className="shrink-0 border-b-2 border-transparent px-4 py-3 text-sm text-[var(--color-muted)] data-[state=active]:border-[var(--color-primary)] data-[state=active]:font-semibold data-[state=active]:text-[var(--color-primary)]">{tab.label}</Tabs.Trigger>)}
             </Tabs.List>

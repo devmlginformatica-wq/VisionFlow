@@ -33,6 +33,7 @@ export const clienteStrings = {
     editorTitle: 'Cadastro de Cliente',
     save: 'Salvar',
     finish: 'Finalizar Cliente',
+    validationFailed: 'Não foi possível salvar. Verifique os campos destacados.',
     awaitingIntegration: 'Cliente enviado para integração e aguardando retorno do ERP.',
     integrationSucceeded: 'Cliente integrado com sucesso. A edição está bloqueada.',
     integrationFailed: 'O ERP rejeitou este cliente:',
