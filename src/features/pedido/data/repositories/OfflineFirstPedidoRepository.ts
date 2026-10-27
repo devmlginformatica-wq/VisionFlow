@@ -56,6 +56,20 @@ export class OfflineFirstPedidoRepository implements PedidoRepository {
 
     async save(pedido: Pedido): Promise<Pedido> {
         const now = new Date().toISOString()
+
+        if (this.isOnline()) {
+            const savedPedido = await this.apiDatasource.save(pedido)
+            if (typeof savedPedido.id !== 'number') {
+                throw new Error('The API did not return a valid pedido id.')
+            }
+
+            return this.localDatasource.save({
+                ...savedPedido,
+                updated_at: now,
+                syncStatus: 'synced',
+            }, 'synced')
+        }
+
         const isNew = pedido.id === null || typeof pedido.id === 'string'
         const id = isNew ? this.createTemporaryId() : pedido.id
 
