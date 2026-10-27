@@ -10,6 +10,10 @@ import type { Endereco, EnderecoInput } from '../../domain/entities/Endereco'
 import type { Titulo } from '../../domain/entities/Titulo'
 import type { ClienteRepository } from '../../domain/repositories/ClienteRepository'
 
+function isTemporaryClientId(id: number | string): id is string {
+    return typeof id === 'string' && id.startsWith('temp-')
+}
+
 export class OfflineFirstClienteRepository implements ClienteRepository {
     private readonly syncEngine: SyncEngine
 
@@ -45,8 +49,8 @@ export class OfflineFirstClienteRepository implements ClienteRepository {
     async save(cliente: Cliente): Promise<Cliente> {
         const now = new Date().toISOString()
         const isNew = cliente.id === null && cliente.localId === undefined
-        const id = isNew ? this.createTemporaryId() : cliente.localId ?? cliente.id
-        if (id === null) {
+        const entityId = isNew ? this.createTemporaryId() : cliente.localId ?? cliente.id
+        if (entityId === null) {
             throw new Error('Could not assign a local id to the cliente.')
         }
 
@@ -62,31 +66,40 @@ export class OfflineFirstClienteRepository implements ClienteRepository {
             syncError: null,
             updated_at: now,
             syncStatus: 'pending',
-        }, 'pending', id)
+        }, 'pending', entityId)
         const operation = SyncOperation.fromJson({
             entity: 'cliente',
-            entityId: id,
-            action: isNew ? 'create' : 'update',
+            entityId,
+            action: isNew || isTemporaryClientId(entityId) ? 'create' : 'update',
             payload: localClient,
             createdAt: now,
         })
 
         try {
-            const pendingCreate = isNew
-                ? undefined
-                : (await this.syncQueueRepository.getPending()).find((pendingOperation) =>
-                    pendingOperation.entity === 'cliente'
-                    && pendingOperation.entityId === id
-                    && pendingOperation.action === 'create',
-                )
-            if (pendingCreate) {
+            const pendingOperations = await this.syncQueueRepository.getPending()
+            const entityOperations = pendingOperations.filter((pendingOperation) =>
+                pendingOperation.entity === 'cliente' && pendingOperation.entityId === entityId,
+            )
+            const pendingCreate = entityOperations.find((pendingOperation) => pendingOperation.action === 'create')
+
+            if (operation.action === 'create' && pendingCreate) {
                 await this.syncQueueRepository.updatePayload(pendingCreate.id, localClient)
+                for (const queuedOperation of entityOperations) {
+                    if (queuedOperation.id !== pendingCreate.id) {
+                        await this.syncQueueRepository.remove(queuedOperation.id)
+                    }
+                }
+            } else if (operation.action === 'create') {
+                for (const queuedOperation of entityOperations) {
+                    await this.syncQueueRepository.remove(queuedOperation.id)
+                }
+                await this.syncQueueRepository.enqueue(operation)
             } else {
                 await this.syncQueueRepository.enqueue(operation)
             }
         } catch (error) {
-            logger.error(`Unable to queue cliente ${id} for synchronization.`, error)
-            await this.localDatasource.save({ ...localClient, syncStatus: 'error' }, 'error', id)
+            logger.error(`Unable to queue cliente ${entityId} for synchronization.`, error)
+            await this.localDatasource.save({ ...localClient, syncStatus: 'error' }, 'error', entityId)
             throw error
         }
 
@@ -96,13 +109,8 @@ export class OfflineFirstClienteRepository implements ClienteRepository {
 
     async delete(id: number | string): Promise<void> {
         const pendingOperations = await this.syncQueueRepository.getPending()
-        const pendingCreate = typeof id === 'string' && id.startsWith('temp-')
-            ? pendingOperations.some((operation) => operation.entity === 'cliente'
-                && operation.entityId === id && operation.action === 'create')
-            : false
-
         await this.localDatasource.delete(id)
-        if (pendingCreate) {
+        if (isTemporaryClientId(id)) {
             for (const operation of pendingOperations) {
                 if (operation.entity === 'cliente' && operation.entityId === id) {
                     await this.syncQueueRepository.remove(operation.id)
