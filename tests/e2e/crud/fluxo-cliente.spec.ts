@@ -61,11 +61,28 @@ test.describe('CRUD de cliente', () => {
     await loginTenant4()
     const nome = `[E2E] Cliente ${Date.now()}`
     const nomeEditado = `${nome} editado`
+    const clienteForm = {
+      stateRegistration: 'ISENTO',
+      buyerContact: 'Contato Compras E2E',
+      buyerEmail: `compras-${Date.now()}@example.com`,
+      billingContact: 'Contato Financeiro E2E',
+      invoiceEmail: `financeiro-${Date.now()}@example.com`,
+      commercialPhone: '1133334444',
+      mobilePhone: '11999990001',
+      otherPhone: '1144445555',
+    }
 
     await test.step('CREATE', async () => {
       await page.goto('/app/clientes/novo')
       await page.getByLabel('Nome / Razão Social').fill(nome)
-      await page.getByLabel('Tel. Comercial').fill('11999990000')
+      await page.getByLabel('IE / RG').fill(clienteForm.stateRegistration)
+      await page.getByLabel('Nome do Contato (Comprador)').fill(clienteForm.buyerContact)
+      await page.getByLabel('E-mail', { exact: true }).fill(clienteForm.buyerEmail)
+      await page.getByLabel('Nome do Contato (Faturamento)').fill(clienteForm.billingContact)
+      await page.getByLabel('E-mail para envio do faturamento').fill(clienteForm.invoiceEmail)
+      await page.getByLabel('Tel. Comercial').fill(clienteForm.commercialPhone)
+      await page.getByLabel('Tel. Celular').fill(clienteForm.mobilePhone)
+      await page.getByLabel('Outro Telefone').fill(clienteForm.otherPhone)
 
       const createResponsePromise = page.waitForResponse((response) =>
         new URL(response.url()).pathname === '/clientes' &&
@@ -86,6 +103,14 @@ test.describe('CRUD de cliente', () => {
     await test.step('UPDATE', async () => {
       await page.getByRole('link', { name: nome }).click()
       await expect(page).toHaveURL(new RegExp(`/app/clientes/${clienteId}(?:\\?.*)?$`))
+      await expect(page.getByLabel('IE / RG')).toHaveValue(clienteForm.stateRegistration)
+      await expect(page.getByLabel('Nome do Contato (Comprador)')).toHaveValue(clienteForm.buyerContact)
+      await expect(page.getByLabel('E-mail', { exact: true })).toHaveValue(clienteForm.buyerEmail)
+      await expect(page.getByLabel('Nome do Contato (Faturamento)')).toHaveValue(clienteForm.billingContact)
+      await expect(page.getByLabel('E-mail para envio do faturamento')).toHaveValue(clienteForm.invoiceEmail)
+      await expect(page.getByLabel('Tel. Comercial')).toHaveValue(clienteForm.commercialPhone)
+      await expect(page.getByLabel('Tel. Celular')).toHaveValue(clienteForm.mobilePhone)
+      await expect(page.getByLabel('Outro Telefone')).toHaveValue(clienteForm.otherPhone)
       await page.getByLabel('Nome / Razão Social').fill(nomeEditado)
 
       const updateResponsePromise = page.waitForResponse((response) =>

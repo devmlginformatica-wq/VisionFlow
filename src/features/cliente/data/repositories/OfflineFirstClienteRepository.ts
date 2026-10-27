@@ -30,17 +30,16 @@ export class OfflineFirstClienteRepository implements ClienteRepository {
 
     async getById(id: number | string): Promise<Cliente | null> {
         const client = await this.localDatasource.getById(id)
-        if (client) {
-            if (typeof id === 'number') {
-                void this.refreshClient(id)
-            }
+        if (typeof id !== 'number' || !this.isOnline()) {
             return client
         }
 
-        if (typeof id === 'number') {
-            void this.refreshClient(id)
+        if (client && client.syncStatus !== 'synced') {
+            return client
         }
-        return null
+
+        await this.refreshClient(id)
+        return (await this.localDatasource.getById(id)) ?? client
     }
 
     async save(cliente: Cliente): Promise<Cliente> {
@@ -195,7 +194,7 @@ export class OfflineFirstClienteRepository implements ClienteRepository {
                     : await this.localDatasource.getById(remoteClient.id)
                 if (!localClient || localClient.syncStatus === 'synced') {
                     await this.localDatasource.save({
-                        ...remoteClient,
+                        ...mergeClientListSummary(remoteClient, localClient),
                         updated_at: remoteClient.updated_at ?? new Date().toISOString(),
                     }, 'synced')
                 }
@@ -246,5 +245,33 @@ export class OfflineFirstClienteRepository implements ClienteRepository {
             ? globalThis.crypto.randomUUID()
             : Math.random().toString(36).slice(2, 10)
         return `temp-${Date.now()}-${randomId}`
+    }
+}
+
+function mergeClientListSummary(remoteClient: Cliente, localClient: Cliente | null): Cliente {
+    if (!localClient) return remoteClient
+
+    return {
+        ...localClient,
+        ...remoteClient,
+        stateRegistration: localClient.stateRegistration,
+        buyerContact: localClient.buyerContact,
+        buyerEmail: localClient.buyerEmail,
+        billingContact: localClient.billingContact,
+        invoiceEmail: localClient.invoiceEmail,
+        commercialPhone: localClient.commercialPhone,
+        mobilePhone: localClient.mobilePhone,
+        otherPhone: localClient.otherPhone,
+        openedAt: localClient.openedAt,
+        carrierId: localClient.carrierId,
+        paymentConditionId: localClient.paymentConditionId,
+        paymentMethodId: localClient.paymentMethodId,
+        priceTableId: localClient.priceTableId,
+        lastVisit: localClient.lastVisit,
+        creditLimit: localClient.creditLimit,
+        userNotes: localClient.userNotes,
+        erpNotes: localClient.erpNotes,
+        addresses: localClient.addresses,
+        titles: localClient.titles,
     }
 }
