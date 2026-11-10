@@ -1,5 +1,6 @@
 import clsx from 'clsx'
 import { NavLink } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useAuthStore } from '../../features/auth/presentation/stores/useAuthStore'
 import { shellRoutes, type ShellNavigationItem } from './shell.constants'
 
@@ -11,7 +12,9 @@ export interface AppMenuItemProps {
 
 export function AppMenuItem({ item, expanded, onNavigate }: AppMenuItemProps): React.JSX.Element {
     const Icon = item.icon
+    const { t } = useTranslation()
     const clearSession = useAuthStore((state) => state.clearSession)
+    const label = item.labelKey ? t(item.labelKey) : item.label
 
     function handleNavigate(): void {
         onNavigate?.()
@@ -22,7 +25,7 @@ export function AppMenuItem({ item, expanded, onNavigate }: AppMenuItemProps): R
         <NavLink
             to={item.path}
             end={item.path === '/'}
-            title={expanded ? undefined : item.label}
+            title={expanded ? undefined : label}
             onClick={handleNavigate}
             className={({ isActive }) => clsx(
                 'flex h-11 items-center gap-3 rounded-md px-3 text-sm transition-colors',
@@ -32,7 +35,7 @@ export function AppMenuItem({ item, expanded, onNavigate }: AppMenuItemProps): R
             )}
         >
             <Icon aria-hidden="true" size={20} className="shrink-0" />
-            <span className={clsx('truncate', expanded ? 'block' : 'sr-only')}>{item.label}</span>
+            <span className={clsx('truncate', expanded ? 'block' : 'sr-only')}>{label}</span>
         </NavLink>
     )
 }

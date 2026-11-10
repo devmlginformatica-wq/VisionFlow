@@ -6,5 +6,60 @@
   "sync": {
     "pending": "Pending",
     "error": "Sync error"
+  },
+  "reports": {
+    "menu": "Reports",
+    "hub": {
+      "title": "Reports",
+      "description": "Turn your operation's data into insights for better decisions.",
+      "intelligent": "Smart Reports",
+      "intelligentDescription": "Ask questions in natural language and explore your data with artificial intelligence.",
+      "sales": "Sales performance",
+      "salesDescription": "Track sales results and growth.",
+      "customers": "Customer analysis",
+      "customersDescription": "Learn more about your customer base.",
+      "products": "Product performance",
+      "productsDescription": "Discover trends across your product catalog.",
+      "comingSoon": "Coming soon",
+      "open": "Open smart reports"
+    },
+    "ai": {
+      "title": "Smart Reports",
+      "description": "Ask questions about your sales data to generate a report.",
+      "back": "Back to reports",
+      "question": "What would you like to know?",
+      "placeholder": "E.g. What were sales by month this year?",
+      "generate": "Generate report",
+      "generating": "Generating report...",
+      "chartLoading": "Loading chart...",
+      "result": "Report results",
+      "statusReady": "Report generated",
+      "statusError": "The report could not be generated"
+    },
+    "errors": {
+      "emptyQuestion": "Enter a question to generate a report.",
+      "badRequest": "We couldn't understand the question. Rephrase it and try again.",
+      "unavailable": "The reporting service is currently unavailable. Please try again later.",
+      "offline": "Connect to the internet to generate a report.",
+      "generic": "The report could not be generated. Please try again."
+    },
+    "table": {
+      "title": "Data",
+      "empty": "No data found.",
+      "emptyCell": "—",
+      "columns": "Column {{index}}"
+    },
+    "stats": {
+      "title": "Statistics",
+      "totalRecords": "Records: {{count}}",
+      "sum": "Sum",
+      "average": "Average"
+    },
+    "chart": {
+      "title": "Visualization",
+      "xAxis": "X-axis: {{name}}",
+      "yAxis": "Y-axis: {{name}}",
+      "unsupported": "The suggested chart type is not supported."
+    }
   }
 }

@@ -6,5 +6,60 @@
   "sync": {
     "pending": "Pendente",
     "error": "Erro ao sincronizar"
+  },
+  "reports": {
+    "menu": "Relatórios",
+    "hub": {
+      "title": "Relatórios",
+      "description": "Transforme os dados da sua operação em informações para decidir melhor.",
+      "intelligent": "Relatórios Inteligentes",
+      "intelligentDescription": "Faça perguntas em linguagem natural e explore seus dados com inteligência artificial.",
+      "sales": "Desempenho de vendas",
+      "salesDescription": "Acompanhe resultados e evolução das vendas.",
+      "customers": "Análise de clientes",
+      "customersDescription": "Conheça melhor sua carteira de clientes.",
+      "products": "Desempenho de produtos",
+      "productsDescription": "Descubra tendências no catálogo de produtos.",
+      "comingSoon": "Em breve",
+      "open": "Abrir relatório inteligente"
+    },
+    "ai": {
+      "title": "Relatórios Inteligentes",
+      "description": "Pergunte sobre seus dados comerciais para gerar um relatório.",
+      "back": "Voltar para relatórios",
+      "question": "O que você gostaria de saber?",
+      "placeholder": "Ex.: Quais foram as vendas por mês neste ano?",
+      "generate": "Gerar relatório",
+      "generating": "Gerando relatório...",
+      "chartLoading": "Carregando gráfico...",
+      "result": "Resultado do relatório",
+      "statusReady": "Relatório gerado",
+      "statusError": "Não foi possível gerar o relatório"
+    },
+    "errors": {
+      "emptyQuestion": "Digite uma pergunta para gerar o relatório.",
+      "badRequest": "Não foi possível entender a pergunta. Reformule e tente novamente.",
+      "unavailable": "O serviço de relatórios está indisponível no momento. Tente novamente mais tarde.",
+      "offline": "Conecte-se à internet para gerar um relatório.",
+      "generic": "Não foi possível gerar o relatório. Tente novamente."
+    },
+    "table": {
+      "title": "Dados",
+      "empty": "Nenhum dado encontrado.",
+      "emptyCell": "—",
+      "columns": "Coluna {{index}}"
+    },
+    "stats": {
+      "title": "Estatísticas",
+      "totalRecords": "Registros: {{count}}",
+      "sum": "Soma",
+      "average": "Média"
+    },
+    "chart": {
+      "title": "Visualização",
+      "xAxis": "Eixo X: {{name}}",
+      "yAxis": "Eixo Y: {{name}}",
+      "unsupported": "O tipo de gráfico sugerido não é compatível."
+    }
   }
 }

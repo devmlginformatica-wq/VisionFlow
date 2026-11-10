@@ -8,6 +8,8 @@ import { RequireAuth } from './features/auth/presentation/components/RequireAuth
 import { HomePage } from './features/home/presentation/pages/HomePage'
 import { ClienteListaPage } from './features/cliente/presentation/pages/ClienteListaPage'
 import { ClienteEditorPage } from './features/cliente/presentation/pages/ClienteEditorPage'
+import { RelatoriosHubPage } from './features/relatorio/presentation/pages/RelatoriosHubPage'
+import { RelatoriosIAPage } from './features/relatorio/presentation/pages/RelatoriosIAPage'
 import { PedidoTipo } from './features/pedido/domain/entities/PedidoTipo'
 import { PedidoEditorPage } from './features/pedido/presentation/pages/PedidoEditorPage'
 import { PedidoListaPage } from './features/pedido/presentation/pages/PedidoListaPage'
@@ -28,6 +30,8 @@ const router = createBrowserRouter([
       { path: shellRoutes.clients.slice(1), element: <ClienteListaPage /> },
       { path: `${shellRoutes.clients.slice(1)}/novo`, element: <ClienteEditorPage /> },
       { path: `${shellRoutes.clients.slice(1)}/:id`, element: <ClienteEditorPage /> },
+      { path: shellRoutes.reports.slice(1), element: <RelatoriosHubPage /> },
+      { path: `${shellRoutes.reports.slice(1)}/ia`, element: <RelatoriosIAPage /> },
       { path: shellRoutes.agenda.slice(1), element: <ShellPlaceholderPage title={kStr.agenda} description={kStr.routeDescription} /> },
       { path: shellRoutes.tasks.slice(1), element: <ShellPlaceholderPage title={kStr.tasks} description={kStr.routeDescription} /> },
       { path: shellRoutes.taskAlias.slice(1), element: <ShellPlaceholderPage title={kStr.tasks} description={kStr.routeDescription} /> },

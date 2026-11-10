@@ -18,6 +18,7 @@ VisionFlow é uma aplicação web/PWA de força de vendas, construída em React 
 - Dashboard de boas-vindas, indicadores e avisos
 - Gestão de clientes com listagem, filtros e editor em múltiplas abas
 - Gestão de pedidos e orçamentos com fluxo de edição em 3 abas
+- Hub de relatórios com geração de relatórios inteligentes por IA
 - Agenda, tarefas e notificações
 - Shell persistente com top bar, menu lateral e navegação responsiva
 
@@ -65,7 +66,8 @@ src/
 │   ├── auth/
 │   ├── cliente/
 │   ├── home/
-│   └── pedido/
+│   ├── pedido/
+│   └── relatorio/
 ├── mocks/
 ├── shared/
 └── i18n/
@@ -99,6 +101,8 @@ A aplicação usa rotas protegidas e shell compartilhada.
 - /app/orcamentos — listagem de orçamentos
 - /app/pedidos — listagem de pedidos
 - /app/clientes — listagem de clientes
+- /app/relatorios — hub de relatórios
+- /app/relatorios/ia — relatórios inteligentes com IA
 - /app/agenda — agenda
 - /app/tarefas — tarefas
 - /app/dashboard — dashboard

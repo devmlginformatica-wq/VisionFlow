@@ -23,6 +23,7 @@ export const shellRoutes = {
     geolocation: '/app/geolocalizacao',
     dashboard: '/app/dashboard',
     notifications: '/app/notificacoes',
+    reports: '/app/relatorios',
     login: '/login',
 } as const
 
@@ -49,6 +50,7 @@ export const kStr = {
     geolocation: 'Geolocalização',
     dashboard: 'Dashboard',
     notifications: 'Notificações',
+    reports: 'Relatórios',
     logout: 'Sair',
     userMenu: 'Menu do usuário',
     unreadNotifications: 'notificações não lidas',
@@ -63,6 +65,7 @@ export const kStr = {
 
 export interface ShellNavigationItem {
     label: string
+    labelKey?: string
     path: string
     icon: LucideIcon
 }
@@ -77,5 +80,6 @@ export const shellNavigation: readonly ShellNavigationItem[] = [
     { label: kStr.geolocation, path: shellRoutes.geolocation, icon: MapPin },
     { label: kStr.dashboard, path: shellRoutes.dashboard, icon: BarChart3 },
     { label: kStr.notifications, path: shellRoutes.notifications, icon: Bell },
+    { label: kStr.reports, labelKey: 'reports.menu', path: shellRoutes.reports, icon: FileText },
     { label: kStr.logout, path: shellRoutes.login, icon: LogOut },
 ]

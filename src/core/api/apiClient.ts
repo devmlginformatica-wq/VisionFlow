@@ -11,6 +11,13 @@ type ApiEnvelope<T> = {
     error: ApiErrorBody | null
 }
 
+export class ApiRequestError extends Error {
+    constructor(message: string, readonly status: number) {
+        super(message)
+        this.name = 'ApiRequestError'
+    }
+}
+
 export const useApiRepository = import.meta.env.VITE_USE_API !== 'false'
 
 export function handleAuthFailure(status: number): void {
@@ -110,7 +117,7 @@ export async function apiRequest<T>(path: string, init: RequestInit = {}): Promi
     }
 
     if (!response.ok) {
-        throw new Error(parseErrorFromResponse(payload))
+        throw new ApiRequestError(parseErrorFromResponse(payload), response.status)
     }
 
     if (payload && typeof payload === 'object' && 'success' in payload && 'data' in payload) {

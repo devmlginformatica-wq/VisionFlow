@@ -11,7 +11,7 @@ export default defineConfig(({ mode }) => {
   const apiBaseUrl = new URL(env.VITE_API_BASE_URL || apiTarget);
   const apiBasePath = apiBaseUrl.pathname.replace(/\/+$/, '');
   const apiPathPattern =
-    /\/(?:api|health|auth|home|clientes|pedidos|orcamentos|agenda|tarefas|notificacoes|shell|cep|empresas|condicoes-pagamento|formas-pagamento|transportadoras|tabelas-preco|produtos)(?:\/|$)/;
+    /\/(?:api|health|auth|home|clientes|pedidos|orcamentos|relatorios|agenda|tarefas|notificacoes|shell|cep|empresas|condicoes-pagamento|formas-pagamento|transportadoras|tabelas-preco|produtos)(?:\/|$)/;
   const apiBasePathPattern = apiBasePath
     ? new RegExp(`${apiBasePath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?:/|$)`)
     : null;
@@ -78,6 +78,7 @@ export default defineConfig(({ mode }) => {
         '/clientes': proxyOptions,
         '/pedidos': proxyOptions,
         '/orcamentos': proxyOptions,
+        '/relatorios': proxyOptions,
         '/agenda': proxyOptions,
         '/tarefas': proxyOptions,
         '/notificacoes': proxyOptions,
